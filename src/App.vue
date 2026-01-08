@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import ProjectCard from './components/ProjectCard.vue';
 import NewProjectCard from './components/NewProjectCard.vue';
 import StudioPage from './components/StudioPage.vue';
+import CreateProjectModal from './components/CreateProjectModal.vue';
 import type { Project } from './types/project';
 
 const projects = ref<Project[]>([
@@ -39,16 +40,26 @@ const projects = ref<Project[]>([
 ]);
 
 const selectedProject = ref<Project | null>(null);
+const showCreateModal = ref(false);
 
 const handleCreate = () => {
+  showCreateModal.value = true;
+};
+
+const handleCreateProject = (projectName: string, projectDescription: string, file: File | null) => {
   const newProject: Project = {
     id: Date.now(),
-    title: 'New Project',
+    title: projectName,
     lastModified: 'Just now',
     created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   };
   projects.value.unshift(newProject);
   selectedProject.value = newProject;
+  showCreateModal.value = false;
+};
+
+const handleCloseCreateModal = () => {
+  showCreateModal.value = false;
 };
 
 const handleOpenProject = (project: Project) => {
@@ -135,4 +146,11 @@ const handleBack = () => {
       </div>
     </div>
   </div>
+
+  <!-- Create Project Modal -->
+  <CreateProjectModal
+    v-if="showCreateModal"
+    @create="handleCreateProject"
+    @close="handleCloseCreateModal"
+  />
 </template>
