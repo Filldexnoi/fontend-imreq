@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Project } from '@/types/project';
+import { useRouter } from 'vue-router'
 
 interface Props {
   project: Project;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<{
   edit: [id: number];
   duplicate: [id: number];
   delete: [id: number];
 }>();
+
+const router = useRouter()
+
+const goToProject = (id : string) => {
+  router.push(`/projects/${id}/origin-requirements`)
+}
 
 const showMenu = ref(false);
 
@@ -36,7 +43,7 @@ const handleDelete = () => {
 </script>
 
 <template>
-  <div
+  <div @click="goToProject(project.id)"
     class="bg-gray-100 text-gray-900 rounded-2xl p-6 h-32 flex flex-col justify-between hover:bg-gray-200 transition cursor-pointer relative"
   >
     <div class="flex justify-between items-start">
