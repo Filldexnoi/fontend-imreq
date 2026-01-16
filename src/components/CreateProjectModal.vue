@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useProjectStore } from '@/stores/project'
+
+const projectStore = useProjectStore()
 
 const emit = defineEmits<{
-  create: [projectName: string, projectDescription: string];
-  close: [];
-}>();
+  close: []
+}>()
 
 const projectName = ref('');
 const projectDescription = ref('');
 
-const handleSubmit = () => {
-  if (projectName.value && projectDescription.value) {
-    emit('create', projectName.value, projectDescription.value);
+const handleSubmit = async () => {
+  if (!projectName.value || !projectDescription.value) return
+
+  try {
+    await projectStore.createProject(
+      projectName.value,
+      projectDescription.value
+    )
+
+    emit('close')
+  } catch (e) {
+    console.error(e)
   }
-};
+}
 
 const handleClose = () => {
   emit('close');
@@ -69,15 +80,15 @@ const handleClose = () => {
         </button>
         <button
           @click="handleSubmit"
-          :disabled="!projectName || !projectDescription"
+          :disabled="!projectName || !projectDescription || projectStore.loading"
           :class="[
             'px-8 py-3 rounded-full transition',
             projectName && projectDescription
-              ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"
         >
-          ต่อไป
+          {{ projectStore.loading ? 'กำลังสร้าง...' : 'สร้าง' }}
         </button>
       </div>
     </div>
