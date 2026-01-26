@@ -1,3 +1,4 @@
+<!-- New Project Card -->
 <script setup lang="ts">
 const emit = defineEmits<{
   create: [];
