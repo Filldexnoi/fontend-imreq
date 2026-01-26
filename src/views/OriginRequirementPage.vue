@@ -1,3 +1,4 @@
+<!-- Origin Requirements Page - Fixed with Auto-navigation -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -5,6 +6,7 @@ import { useProjectStore } from '@/stores/project'
 import UploadButton from '@/components/UploadButton.vue'
 import ColumnMappingModal from '@/components/ColumnMappingModal.vue'
 import type { ColumnMapping } from '@/types/project'
+import  WorkflowSidebar from '@/components/WorkflowSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +39,12 @@ onMounted(async () => {
   }
 })
 
+// Check which stages are completed
+const hasOriginRequirements = computed(() => store.hasRequirements)
+const hasAnalysis = computed(() => store.hasAnalysis)
+const hasSuggestions = computed(() => store.hasSuggestions)
+const hasSelected = computed(() => store.hasSelected)
+
 // Search and pagination
 const filteredRequirements = computed(() => {
   let filtered = [...requirements.value]
@@ -62,8 +70,6 @@ const paginatedRequirements = computed(() => {
 const totalPages = computed(() => 
   Math.ceil(filteredRequirements.value.length / itemsPerPage)
 )
-
-const hasRequirements = computed(() => requirements.value.length > 0)
 
 // File upload handling
 const readFileColumns = async (file: File): Promise<string[]> => {
@@ -127,6 +133,12 @@ const handleMappingConfirm = async (mapping: any) => {
     
     showMappingModal.value = false
     uploadedFile.value = null
+    
+    // ✅ AUTO-NAVIGATE to Analysis page after successful upload
+    setTimeout(() => {
+      router.push(`/projects/${projectId.value}/analysis`)
+    }, 500)
+    
   } catch (error: any) {
     console.error('Upload failed:', error)
     alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + error.message)
@@ -139,7 +151,7 @@ const handleMappingClose = () => {
 }
 
 const handleBack = () => {
-  router.back()
+  router.push('/projects')
 }
 
 const goToPage = (page: number) => {
@@ -147,6 +159,11 @@ const goToPage = (page: number) => {
     currentPage.value = page
   }
 }
+
+// Navigation helpers
+const canNavigateToAnalysis = computed(() => hasOriginRequirements.value)
+const canNavigateToSuggestions = computed(() => hasAnalysis.value)
+const canNavigateToExport = computed(() => hasSuggestions.value)
 </script>
 
 <template>
@@ -173,169 +190,38 @@ const goToPage = (page: number) => {
         </svg>
       </button>
       
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 flex-1">
         <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
         </div>
-        <h1 class="text-xl font-semibold text-white">
-          {{ project?.title || 'Requirement List' }}
-        </h1>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-semibold text-white">
+              {{ project?.title || 'Requirement List' }}
+            </h1>
+            <span class="text-gray-400 text-sm">•</span>
+            <span class="text-blue-400 text-sm font-medium">Step 1: Upload requirements</span>
+          </div>
+        </div>
       </div>
     </header>
 
     <!-- Sidebar -->
     <div class="flex-1 flex">
-      <!-- Left Sidebar with Workflow -->
-      <aside class="w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-6 gap-6">
-        <!-- Workflow Steps -->
-        <div class="flex flex-col items-center gap-4">
-          <!-- Step 1: Upload (Active) -->
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-white"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </div>
-            <span class="text-xs text-gray-400 text-center">อัปโหลด<br/>ข้อมูล</span>
-          </div>
-
-          <!-- Arrow -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-gray-600"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <polyline points="19 12 12 19 5 12"/>
-          </svg>
-
-          <!-- Step 2: Analyze -->
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-gray-400"
-              >
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-              </svg>
-            </div>
-            <span class="text-xs text-gray-600 text-center">วิเคราะห์<br/>ข้อมูล</span>
-          </div>
-
-          <!-- Arrow -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-gray-600"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <polyline points="19 12 12 19 5 12"/>
-          </svg>
-
-          <!-- Step 3: Improve -->
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-gray-400"
-              >
-                <path d="M12 20h9"/>
-                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-              </svg>
-            </div>
-            <span class="text-xs text-gray-600 text-center">ปรับปรุง<br/>ข้อความ</span>
-          </div>
-
-          <!-- Arrow -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-gray-600"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <polyline points="19 12 12 19 5 12"/>
-          </svg>
-
-          <!-- Step 4: Export -->
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-gray-400"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </div>
-            <span class="text-xs text-gray-600 text-center">ดาวน์โหลด<br/>รายงาน</span>
-          </div>
-        </div>
-      </aside>
+      <!-- แทนที่ sidebar เดิมด้วย WorkflowSidebar -->
+      <WorkflowSidebar
+        :project-id="projectId"
+        :has-origin-requirements="hasOriginRequirements"
+        :has-analysis="hasAnalysis"
+        :has-suggestions="hasSuggestions"
+        :has-selected="hasSelected"
+        current-step="upload"
+      />
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col bg-gray-900">
         <!-- Upload State (No requirements) -->
-        <div v-if="!hasRequirements" class="flex-1">
+        <div v-if="!hasOriginRequirements" class="flex-1">
           <UploadButton @file-uploaded="handleFileUploaded" />
         </div>
 
@@ -412,7 +298,7 @@ const goToPage = (page: number) => {
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">ทั้งหมด</span>
+            <span class="text-gray-400 text-sm ml-2">ทั้งหมด {{ filteredRequirements.length }} รายการ</span>
           </div>
         </div>
       </main>

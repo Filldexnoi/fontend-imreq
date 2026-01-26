@@ -1,9 +1,11 @@
+<!-- Projects Page -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useProjectStore } from '@/stores/project'
 import CreateProjectModal from '@/components/CreateProjectModal.vue'
 import ProjectCard from '@/components/ProjectCard.vue'
 import NewProjectCard from '@/components/NewProjectCard.vue'
+import '../assets/analys.css';
 
 const store = useProjectStore()
 

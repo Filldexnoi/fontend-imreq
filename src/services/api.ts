@@ -1,12 +1,18 @@
+// src/services/api.ts - Complete API Service Module
 import type { 
   Project, 
   OriginRequirement, 
   AnalyzedRequirement, 
   SuggestedRequirement,
+  SelectedRequirement,
   ColumnMapping 
 } from '@/types/project'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
+// ============================================
+// Helper Functions
+// ============================================
 
 // Helper function for fetch requests
 async function fetchAPI(url: string, options?: RequestInit) {
@@ -42,11 +48,19 @@ async function uploadFile(url: string, formData: FormData) {
   return response.json()
 }
 
+// ============================================
 // Project API
+// ============================================
+
 export const projectAPI = {
   // Get all projects
   getAll: async (): Promise<Project[]> => {
     return fetchAPI('/projects')
+  },
+
+  // Get single project
+  getById: async (projectId: string): Promise<Project> => {
+    return fetchAPI(`/projects/${projectId}`)
   },
 
   // Create project
@@ -57,9 +71,26 @@ export const projectAPI = {
     })
   },
 
+  // Update project (if you want to add this later)
+  update: async (projectId: string, project: Partial<{ title: string; description: string }>): Promise<Project> => {
+    return fetchAPI(`/projects/${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(project),
+    })
+  },
+
+  // Delete project (if you want to add this later)
+  delete: async (projectId: string): Promise<void> => {
+    return fetchAPI(`/projects/${projectId}`, {
+      method: 'DELETE',
+    })
+  },
 }
 
+// ============================================
 // Origin Requirements API
+// ============================================
+
 export const originRequirementAPI = {
   // Get all requirements for a project
   getAll: async (projectId: string): Promise<OriginRequirement[]> => {
@@ -80,7 +111,10 @@ export const originRequirementAPI = {
   },
 }
 
+// ============================================
 // Analysis API
+// ============================================
+
 export const analysisAPI = {
   // Analyze all requirements in project
   analyzeProject: async (projectId: string): Promise<{
@@ -106,13 +140,16 @@ export const analysisAPI = {
     })
   },
 
-  // Get analyzed requirements (if you add GET endpoint)
+  // Get analyzed requirements
   getAll: async (projectId: string): Promise<AnalyzedRequirement[]> => {
     return fetchAPI(`/projects/${projectId}/analyzedrequirements`)
   },
 }
 
+// ============================================
 // Suggestions API
+// ============================================
+
 export const suggestionAPI = {
   // Generate suggestions for project
   generate: async (projectId: string): Promise<{
@@ -144,14 +181,54 @@ export const suggestionAPI = {
     total: number
     suggestions: SuggestedRequirement[]
   }> => {
-    return fetchAPI(`/projects/${projectId}/suggestedrequirements`)
+    const suggestions = await fetchAPI(`/projects/${projectId}/suggestedrequirements`)
+    return {
+      project_id: projectId,
+      total: suggestions.length,
+      suggestions: suggestions
+    }
   },
-
 }
 
-// Export API
-export const exportAPI = {
+// ============================================
+// Selected Requirements API (NEW!)
+// ============================================
 
+export const selectedRequirementAPI = {
+  // Save selected requirements
+  create: async (
+    projectId: string,
+    requirements: Array<{
+      req_id: string
+      module: string
+      requirement: string
+    }>
+  ): Promise<{ inserted: number }> => {
+    return fetchAPI(`/projects/${projectId}/selectedrequirements`, {
+      method: 'POST',
+      body: JSON.stringify(requirements),
+    })
+  },
+
+  // Get selected requirements
+  getAll: async (projectId: string): Promise<SelectedRequirement[]> => {
+    return fetchAPI(`/projects/${projectId}/selectedrequirements`)
+  },
+
+  // Delete all selected requirements (optional - for reset)
+  deleteAll: async (projectId: string): Promise<void> => {
+    return fetchAPI(`/projects/${projectId}/selectedrequirements`, {
+      method: 'DELETE',
+    })
+  },
+}
+
+// ============================================
+// Export API
+// ============================================
+
+export const exportAPI = {
+  // Get CSV download URL
   SelectedCSV: (projectId: string): string => {
     return `${API_BASE_URL.replace('/api', '')}/api/export/projects/${projectId}/selectedrequirements/csv`
   },
@@ -173,9 +250,19 @@ export const exportAPI = {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(downloadUrl)
   },
+
+  // Alternative: Direct download with project name
+  downloadSelectedCSV: async (projectId: string, projectTitle?: string): Promise<void> => {
+    const filename = `${projectTitle || 'project'}_selected_requirements.csv`
+    const url = exportAPI.SelectedCSV(projectId)
+    await exportAPI.download(url, filename)
+  },
 }
 
+// ============================================
 // WebSocket API
+// ============================================
+
 export const websocketAPI = {
   // Create WebSocket for analysis progress
   createAnalysisWebSocket: (projectId: string): WebSocket => {
@@ -202,12 +289,16 @@ export const websocketAPI = {
   },
 }
 
-// Export all APIs
+// ============================================
+// Export all APIs as default
+// ============================================
+
 export default {
   project: projectAPI,
   originRequirement: originRequirementAPI,
   analysis: analysisAPI,
   suggestion: suggestionAPI,
+  selectedRequirement: selectedRequirementAPI,  // ← NEW!
   export: exportAPI,
   websocket: websocketAPI,
 }
