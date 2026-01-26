@@ -1,4 +1,8 @@
-// Project types
+// Project Types - Complete with all missing types
+
+// ============================================
+// Project Types
+// ============================================
 export interface Project {
   id: string
   title: string
@@ -12,7 +16,9 @@ export interface ProjectCreate {
   description: string
 }
 
-// Origin Requirement types
+// ============================================
+// Origin Requirement Types
+// ============================================
 export interface OriginRequirement {
   id: string
   req_id: string
@@ -23,7 +29,9 @@ export interface OriginRequirement {
   updated_at?: string
 }
 
-// Analyzed Requirement types
+// ============================================
+// Analyzed Requirement Types
+// ============================================
 export interface AnalyzedRequirement {
   id: string
   req_id: string
@@ -33,11 +41,14 @@ export interface AnalyzedRequirement {
   score: string  // e.g., "7/9"
   characteristics: string[]  // Array of passed criteria
   evaluation: Record<string, string>  // Failed criteria with reasons
+  status?: string  // e.g., "analyzed", "pending"
   created_at: string
   updated_at?: string
 }
 
-// Suggested Requirement types
+// ============================================
+// Suggested Requirement Types
+// ============================================
 export interface SuggestedRequirement {
   id: string
   req_id: string
@@ -46,12 +57,15 @@ export interface SuggestedRequirement {
   original_requirement: string
   suggested_requirement: string
   original_score: string
+  suggested_score?: string  // Calculated or provided by backend
   improvements: Record<string, string>  // What was fixed per criterion
   created_at: string
   updated_at?: string
 }
 
-// Selected Requirement types
+// ============================================
+// Selected Requirement Types
+// ============================================
 export interface SelectedRequirement {
   id: string
   req_id: string
@@ -62,7 +76,26 @@ export interface SelectedRequirement {
   updated_at?: string
 }
 
-// CSV Upload types
+// ============================================
+// Suggestion & Comparison Types (NEW)
+// ============================================
+export interface Suggestion {
+  requirement_id: string
+  original: AnalyzedRequirement
+  suggested: Partial<AnalyzedRequirement>
+  confidence: number  // 0-1
+  reason?: string
+}
+
+export interface ComparisonItem {
+  requirement_id: string
+  selected: 'original' | 'suggested'
+  final_data: AnalyzedRequirement
+}
+
+// ============================================
+// CSV Upload Types
+// ============================================
 export interface ColumnMapping {
   req_id: string
   module: string
@@ -70,10 +103,16 @@ export interface ColumnMapping {
 }
 
 export interface UploadResponse {
-  inserted_rows: number
+  file_id: string
+  file_name: string
+  row_count: number
+  columns: string[]
+  preview_data?: Record<string, any>[]
 }
 
-// Analysis types
+// ============================================
+// Analysis Types
+// ============================================
 export interface AnalysisResponse {
   message: string
   method: string
@@ -113,7 +152,9 @@ export interface DetailedResult {
   suggestion: string
 }
 
-// Suggestion types
+// ============================================
+// Suggestion Generation Types
+// ============================================
 export interface SuggestionResponse {
   message: string
   saved_count: number
@@ -143,7 +184,9 @@ export interface SingleSuggestionResponse {
   message: string
 }
 
-// WebSocket Progress types
+// ============================================
+// WebSocket Progress Types
+// ============================================
 export interface ProgressMessage {
   type: 'start' | 'progress' | 'complete' | 'saved' | 'error'
   completed?: number
@@ -154,12 +197,16 @@ export interface ProgressMessage {
   saved_count?: number
 }
 
-// Export types
+// ============================================
+// Export Types
+// ============================================
 export interface ExportUrls {
   selected: string
 }
 
+// ============================================
 // ISO 29148 Criteria
+// ============================================
 export type ISO29148Criterion =
   | 'Appropriate'
   | 'Complete'
@@ -195,13 +242,17 @@ export const ISO29148_DESCRIPTIONS: Record<ISO29148Criterion, string> = {
   Verifiable: 'วัดผลได้',
 }
 
-// API Error type
+// ============================================
+// API Error Types
+// ============================================
 export interface APIError {
   detail: string
   status?: number
 }
 
-// Utility types
+// ============================================
+// Utility Types
+// ============================================
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error'
 
 export interface AsyncState<T> {
