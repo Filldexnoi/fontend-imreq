@@ -4,6 +4,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import WorkflowSidebar from '@/components/WorkflowSidebar.vue'
+import TextDiff from '@/components/TextDiff.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,9 +50,16 @@ onMounted(async () => {
   }
 })
 
+// Sort suggestions by req_id (natural sort)
+const sortedSuggestions = computed(() => {
+  return [...suggestions.value].sort((a, b) => {
+    return a.req_id.localeCompare(b.req_id, undefined, { numeric: true, sensitivity: 'base' })
+  })
+})
+
 // Filter and pagination
 const filteredSuggestions = computed(() => {
-  let filtered = [...suggestions.value]
+  let filtered = [...sortedSuggestions.value]
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -126,6 +134,10 @@ const handleBack = () => {
   router.push(`/projects/${projectId.value}/suggestions`)
 }
 
+const handlePrevious = () => {
+  router.push(`/projects/${projectId.value}/suggestions`)
+}
+
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
@@ -155,23 +167,12 @@ const getScoreBg = (score: string | undefined) => {
   return 'bg-green-500 bg-opacity-10'
 }
 
-const getSuggestedScore = (sug: any): string => {
-  if (sug.suggested_score) return sug.suggested_score
-
-  const originalScore = sug.original_score || '0/9'
-  const parts = originalScore.split('/')
-  const originalNum = parts.length > 0 ? parseInt(parts[0]) : 0
-  const improvementCount = Object.keys(sug.improvements || {}).length
-  const suggestedNum = Math.min(isNaN(originalNum) ? 0 : originalNum + improvementCount, 9)
-
-  return `${suggestedNum}/9`
-}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 flex flex-col">
+  <div class="h-screen bg-gray-900 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700">
+    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button @click="handleBack" class="p-2 hover:bg-gray-700 rounded-lg transition">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -192,7 +193,7 @@ const getSuggestedScore = (sug: any): string => {
       </div>
     </header>
 
-    <div class="flex-1 flex min-h-0">
+    <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- Sidebar -->
       <WorkflowSidebar
         :project-id="projectId"
@@ -204,7 +205,7 @@ const getSuggestedScore = (sug: any): string => {
       />
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col bg-gray-900 min-h-0">
+      <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
         <!-- Empty State -->
         <div v-if="!hasSuggestions" class="flex-1 flex items-center justify-center">
           <div class="text-center">
@@ -227,9 +228,9 @@ const getSuggestedScore = (sug: any): string => {
         </div>
 
         <!-- Compare State -->
-        <div v-else class="flex-1 flex flex-col">
+        <div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <!-- Info Bar -->
-          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-6">
                 <div class="text-center">
@@ -246,52 +247,62 @@ const getSuggestedScore = (sug: any): string => {
                 </div>
               </div>
 
-              <!-- Search -->
-              <div class="relative w-64">
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="Search"
-                  class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  class="absolute left-3 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              </div>
+              <!-- Right side: Search + Navigation buttons -->
+              <div class="flex items-center gap-4">
+                <!-- Search -->
+                <div class="relative w-64">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search"
+                    class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="absolute left-3 top-2.5 text-gray-400"
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </div>
 
-              <!-- Confirm Button -->
-              <button
-                @click="handleConfirm"
-                :disabled="isSaving"
-                class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {{ isSaving ? 'Saving...' : 'Confirm Selection' }}
-              </button>
+                <!-- Navigation Buttons -->
+                <button
+                  @click="handlePrevious"
+                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </button>
+                <button
+                  @click="handleConfirm"
+                  :disabled="isSaving"
+                  class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{ isSaving ? 'Saving...' : 'Confirm Selection' }}
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-auto">
-            <table class="min-w-full">
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <table class="w-full table-fixed">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-32">ReqID</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-48">Module</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white">Original Requirement</th>
-                  <th class="px-6 py-4 text-center text-sm font-semibold text-white w-24">Score</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white">Suggested Requirement</th>
-                  <th class="px-6 py-4 text-center text-sm font-semibold text-white w-24">Score</th>
-                  <th class="px-6 py-4 text-center text-sm font-semibold text-white w-40">Select</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 100px;">ReqID</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 150px;">Module</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">Original Requirement (Click to select)</th>
+                  <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 70px;">Score</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">Suggested Requirement (Click to select)</th>
                 </tr>
               </thead>
               <tbody class="bg-white">
@@ -301,20 +312,38 @@ const getSuggestedScore = (sug: any): string => {
                   class="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <!-- ReqID -->
-                  <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ sug.req_id }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-900 font-medium truncate" :title="sug.req_id">{{ sug.req_id }}</td>
 
                   <!-- Module -->
-                  <td class="px-6 py-4 text-sm text-gray-900">{{ sug.module }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
 
-                  <!-- Original Requirement -->
-                  <td class="px-6 py-4 text-sm text-gray-700">
-                    <div class="max-w-md">
-                      {{ sug.original_requirement }}
+                  <!-- Original Requirement - Clickable -->
+                  <td
+                    @click="selectRequirement(sug.req_id, 'original')"
+                    class="px-4 py-4 text-sm text-gray-700 cursor-pointer transition-all"
+                    :class="[
+                      selections.get(sug.req_id) === 'original'
+                        ? 'bg-yellow-100 border-l-4 border-yellow-500'
+                        : 'hover:bg-yellow-50'
+                    ]"
+                  >
+                    <div class="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        :name="`select-${sug.req_id}`"
+                        :checked="selections.get(sug.req_id) === 'original'"
+                        @click.stop
+                        @change="selectRequirement(sug.req_id, 'original')"
+                        class="w-4 h-4 text-yellow-600 cursor-pointer mt-0.5 flex-shrink-0"
+                      />
+                      <div class="whitespace-pre-wrap break-words">
+                        {{ sug.original_requirement }}
+                      </div>
                     </div>
                   </td>
 
                   <!-- Original Score -->
-                  <td class="px-6 py-4">
+                  <td class="px-4 py-4">
                     <div class="flex justify-center">
                       <span
                         :class="[
@@ -328,51 +357,32 @@ const getSuggestedScore = (sug: any): string => {
                     </div>
                   </td>
 
-                  <!-- Suggested Requirement -->
-                  <td class="px-6 py-4 text-sm text-gray-700 bg-green-50">
-                    <div class="max-w-md">
-                      {{ sug.suggested_requirement }}
-                    </div>
-                  </td>
-
-                  <!-- Suggested Score -->
-                  <td class="px-6 py-4 bg-green-50">
-                    <div class="flex justify-center">
-                      <span
-                        :class="[
-                          'px-2 py-1 rounded text-xs font-semibold',
-                          getScoreBg(getSuggestedScore(sug)),
-                          getScoreColor(getSuggestedScore(sug))
-                        ]"
-                      >
-                        {{ getSuggestedScore(sug) }}
-                      </span>
-                    </div>
-                  </td>
-
-                  <!-- Radio Selection -->
-                  <td class="px-6 py-4">
-                    <div class="flex items-center justify-center gap-4">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          :name="`select-${sug.req_id}`"
-                          :checked="selections.get(sug.req_id) === 'original'"
-                          @change="selectRequirement(sug.req_id, 'original')"
-                          class="w-4 h-4 text-yellow-600"
+                  <!-- Suggested Requirement - Clickable -->
+                  <td
+                    @click="selectRequirement(sug.req_id, 'suggested')"
+                    class="px-4 py-4 text-sm text-gray-700 cursor-pointer transition-all"
+                    :class="[
+                      selections.get(sug.req_id) === 'suggested'
+                        ? 'bg-green-100 border-l-4 border-green-500'
+                        : 'hover:bg-green-50'
+                    ]"
+                  >
+                    <div class="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        :name="`select-${sug.req_id}`"
+                        :checked="selections.get(sug.req_id) === 'suggested'"
+                        @click.stop
+                        @change="selectRequirement(sug.req_id, 'suggested')"
+                        class="w-4 h-4 text-green-600 cursor-pointer mt-0.5 flex-shrink-0"
+                      />
+                      <div class="whitespace-pre-wrap break-words">
+                        <TextDiff
+                          :original="sug.original_requirement"
+                          :suggested="sug.suggested_requirement"
+                          :show-diff="true"
                         />
-                        <span class="text-xs text-gray-600">Original</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          :name="`select-${sug.req_id}`"
-                          :checked="selections.get(sug.req_id) === 'suggested'"
-                          @change="selectRequirement(sug.req_id, 'suggested')"
-                          class="w-4 h-4 text-green-600"
-                        />
-                        <span class="text-xs text-gray-600">Improved</span>
-                      </label>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -381,7 +391,7 @@ const getSuggestedScore = (sug: any): string => {
           </div>
 
           <!-- Pagination -->
-          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2">
+          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2 flex-shrink-0">
             <button
               v-for="page in totalPages"
               :key="page"

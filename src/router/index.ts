@@ -1,74 +1,101 @@
-// router/index.ts - Corrected Routes
+// router/index.ts - Routes with Authentication
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes: RouteRecordRaw[] = [
+  // Auth Routes (Guest only)
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginPage.vue'),
+    meta: {
+      title: 'Login - ImReq',
+      guest: true
+    }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterPage.vue'),
+    meta: {
+      title: 'Register - ImReq',
+      guest: true
+    }
+  },
+
   // Root redirect
   {
     path: '/',
     redirect: '/projects'
   },
-  
+
   // Projects List Page
   {
     path: '/projects',
     name: 'projects',
     component: () => import('@/views/ProjectsPage.vue'),
     meta: {
-      title: 'Projects - ImReq'
+      title: 'Projects - ImReq',
+      requiresAuth: true
     }
   },
-  
-  // Origin Requirements Page (อัพโหลดไฟล์)
+
+  // Origin Requirements Page
   {
     path: '/projects/:id/origin-requirements',
     name: 'origin-requirements',
     component: () => import('@/views/OriginRequirementPage.vue'),
     meta: {
-      title: 'Origin Requirements - ImReq'
+      title: 'Origin Requirements - ImReq',
+      requiresAuth: true
     }
   },
 
-  // Requirements Analysis Page (วิเคราะห์ความต้องการ)
+  // Requirements Analysis Page
   {
     path: '/projects/:id/analysis',
     name: 'analysis',
     component: () => import('@/views/RequirementsAnalysis.vue'),
     meta: {
-      title: 'Requirements Analysis - ImReq'
+      title: 'Requirements Analysis - ImReq',
+      requiresAuth: true
     }
   },
 
-  // Compare Page (เปรียบเทียบ)
+  // Compare Page
   {
     path: '/projects/:id/compare',
     name: 'compare',
     component: () => import('@/views/ComparePage.vue'),
     meta: {
-      title: 'Compare Requirements - ImReq'
+      title: 'Compare Requirements - ImReq',
+      requiresAuth: true
     }
   },
-  
-  // Suggestion Page (ข้อเสนอแนะ)
+
+  // Suggestion Page
   {
     path: '/projects/:id/suggestions',
     name: 'suggestions',
     component: () => import('@/views/SuggestionPage.vue'),
     meta: {
-      title: 'Suggestions - ImReq'
+      title: 'Suggestions - ImReq',
+      requiresAuth: true
     }
   },
-  
-  // Export/Download Page (ดาวน์โหลด)
+
+  // Export/Download Page
   {
     path: '/projects/:id/export',
     name: 'export',
     component: () => import('@/views/DownloadPage.vue'),
     meta: {
-      title: 'Export - ImReq'
+      title: 'Export - ImReq',
+      requiresAuth: true
     }
   },
-  
+
   // 404 Not Found
   {
     path: '/:pathMatch(.*)*',
@@ -88,8 +115,30 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, from, next) => {
+// Navigation Guard
+router.beforeEach(async (to, from, next) => {
+  // Set page title
   document.title = (to.meta.title as string) || 'ImReq'
+
+  const authStore = useAuthStore()
+
+  // Initialize auth on first load
+  if (!authStore.initialized) {
+    await authStore.initializeAuth()
+  }
+
+  // Check if route requires authentication
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Redirect to login
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+
+  // Check if route is for guests only (login/register)
+  if (to.meta.guest && authStore.isAuthenticated) {
+    // Redirect to projects
+    return next({ name: 'projects' })
+  }
+
   next()
 })
 

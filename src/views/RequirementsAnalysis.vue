@@ -3,8 +3,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
-import type { AnalyzedRequirement } from '@/types/project'
-import  WorkflowSidebar from '@/components/WorkflowSidebar.vue'
+import WorkflowSidebar from '@/components/WorkflowSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,7 +18,6 @@ const currentPage = ref(1)
 const itemsPerPage = 10
 const selectedFilter = ref<'all' | 'low' | 'medium' | 'high'>('all')
 const isAnalyzing = ref(false)
-const showAnalysisModal = ref(false)
 
 // Stage tracking for WorkflowSidebar
 const hasOriginRequirements = computed(() => store.hasRequirements)
@@ -27,13 +25,13 @@ const hasAnalysis = computed(() => store.hasAnalysis)
 const hasSuggestions = computed(() => store.hasSuggestions)
 const hasSelected = computed(() => store.hasSelected)
 
-// Load data on mount
+// Load data on mount (no auto-trigger - user must click button)
 onMounted(async () => {
   if (projectId.value) {
     try {
       await store.fetchProjects()
       const foundProject = store.projects.find(p => p.id === projectId.value)
-      
+
       if (foundProject) {
         await store.selectProject(foundProject)
         await store.fetchAnalyzedRequirements(projectId.value)
@@ -44,10 +42,17 @@ onMounted(async () => {
   }
 })
 
+// Sort requirements by req_id (natural sort)
+const sortedRequirements = computed(() => {
+  return [...requirements.value].sort((a, b) => {
+    return a.req_id.localeCompare(b.req_id, undefined, { numeric: true, sensitivity: 'base' })
+  })
+})
+
 // Filter and pagination
 const filteredRequirements = computed(() => {
-  let filtered = [...requirements.value]
-  
+  let filtered = [...sortedRequirements.value]
+
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -57,7 +62,7 @@ const filteredRequirements = computed(() => {
       req.requirement.toLowerCase().includes(query)
     )
   }
-  
+
   // Score filter
   if (selectedFilter.value !== 'all') {
     filtered = filtered.filter(req => {
@@ -68,7 +73,7 @@ const filteredRequirements = computed(() => {
       return true
     })
   }
-  
+
   return filtered
 })
 
@@ -78,7 +83,7 @@ const paginatedRequirements = computed(() => {
   return filteredRequirements.value.slice(start, end)
 })
 
-const totalPages = computed(() => 
+const totalPages = computed(() =>
   Math.ceil(filteredRequirements.value.length / itemsPerPage)
 )
 
@@ -93,11 +98,11 @@ const stats = computed(() => {
     return score >= 4 && score <= 6
   }).length
   const high = requirements.value.filter(r => parseInt(r.score.split('/')[0]) >= 7).length
-  
+
   const avgScore = requirements.value.reduce((sum, r) => {
     return sum + parseInt(r.score.split('/')[0])
   }, 0) / (total || 1)
-  
+
   return { total, low, medium, high, avgScore: avgScore.toFixed(1) }
 })
 
@@ -116,37 +121,27 @@ const getScoreBg = (score: string) => {
   return 'bg-green-500 bg-opacity-10'
 }
 
-// Actions
-const handleBack = () => {
+// Navigation
+const handlePrevious = () => {
   router.push(`/projects/${projectId.value}/origin-requirements`)
 }
 
-const handleAnalyze = () => {
-  showAnalysisModal.value = true
+const handleNext = () => {
+  router.push(`/projects/${projectId.value}/suggestions`)
 }
 
 const startAnalysis = async () => {
-  showAnalysisModal.value = false
   isAnalyzing.value = true
-  
+
   try {
     await store.analyzeProjectWithProgress(projectId.value)
     await store.fetchAnalyzedRequirements(projectId.value)
   } catch (error) {
     console.error('Analysis failed:', error)
-    alert('เกิดข้อผิดพลาดในการวิเคราะห์')
+    alert('Analysis failed')
   } finally {
     isAnalyzing.value = false
   }
-}
-
-const handleGenerateSuggestions = async () => {
-  if (!hasRequirements.value) {
-    alert('กรุณาวิเคราะห์ความต้องการก่อน')
-    return
-  }
-  
-  router.push(`/projects/${projectId.value}/suggestions`)
 }
 
 const goToPage = (page: number) => {
@@ -163,11 +158,11 @@ const toggleRow = (reqId: string) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 flex flex-col">
+  <div class="h-screen bg-gray-900 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700">
+    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button
-        @click="handleBack"
+        @click="handlePrevious"
         class="p-2 hover:bg-gray-700 rounded-lg transition"
       >
         <svg
@@ -185,7 +180,7 @@ const toggleRow = (reqId: string) => {
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
-      
+
       <div class="flex items-center gap-3 flex-1">
         <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
@@ -203,8 +198,7 @@ const toggleRow = (reqId: string) => {
     </header>
 
     <!-- Sidebar -->
-    <div class="flex-1 flex">
-      <!-- แทนที่ sidebar เดิมด้วย WorkflowSidebar -->
+    <div class="flex-1 flex min-h-0 overflow-hidden">
       <WorkflowSidebar
         :project-id="projectId"
         :has-origin-requirements="hasOriginRequirements"
@@ -215,77 +209,46 @@ const toggleRow = (reqId: string) => {
       />
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col bg-gray-900">
-        <!-- Empty State -->
-        <div v-if="!hasRequirements" class="flex-1 flex items-center justify-center">
-          <div class="text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-700 rounded-full mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-gray-400"
-              >
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-              </svg>
-            </div>
-            <h3 class="text-white text-lg font-semibold mb-2">ยังไม่มีผลการวิเคราะห์</h3>
-            <p class="text-gray-400 text-sm mb-6">กรุณาเริ่มการวิเคราะห์ความต้องการ</p>
-            <button
-              @click="handleAnalyze"
-              class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition"
-            >
-              เริ่มวิเคราะห์
-            </button>
-          </div>
-        </div>
-
-        <!-- Results State -->
-        <div v-else class="flex-1 flex flex-col">
+      <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
+        <!-- Results State (show directly without empty state) -->
+        <div v-if="hasRequirements" class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <!-- Stats Bar -->
-          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
             <div class="grid grid-cols-5 gap-4">
               <div class="text-center">
-                <p class="text-gray-400 text-xs mb-1">ทั้งหมด</p>
+                <p class="text-gray-400 text-xxl mb-1">Total</p>
                 <p class="text-white text-2xl font-bold">{{ stats.total }}</p>
               </div>
               <div class="text-center">
-                <p class="text-red-400 text-xs mb-1">ต่ำ (1-3)</p>
+                <p class="text-red-400 text-xxl mb-1">Low (1-3)</p>
                 <p class="text-red-500 text-2xl font-bold">{{ stats.low }}</p>
               </div>
               <div class="text-center">
-                <p class="text-yellow-400 text-xs mb-1">ปานกลาง (4-6)</p>
+                <p class="text-yellow-400 text-xxl mb-1">Medium (4-6)</p>
                 <p class="text-yellow-500 text-2xl font-bold">{{ stats.medium }}</p>
               </div>
               <div class="text-center">
-                <p class="text-green-400 text-xs mb-1">สูง (7-9)</p>
+                <p class="text-green-400 text-xxl mb-1">High (7-9)</p>
                 <p class="text-green-500 text-2xl font-bold">{{ stats.high }}</p>
               </div>
               <div class="text-center">
-                <p class="text-gray-400 text-xs mb-1">คะแนนเฉลี่ย</p>
+                <p class="text-gray-400 text-xxl mb-1">Average Score</p>
                 <p class="text-blue-400 text-2xl font-bold">{{ stats.avgScore }}/9</p>
               </div>
             </div>
           </div>
 
           <!-- Toolbar -->
-          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
             <div class="flex items-center justify-between gap-4">
               <!-- Filters -->
               <div class="flex items-center gap-2">
                 <button
                   v-for="filter in [
-                    { value: 'all', label: 'ทั้งหมด' },
-                    { value: 'low', label: 'ต่ำ' },
-                    { value: 'medium', label: 'ปานกลาง' },
-                    { value: 'high', label: 'สูง' }
+                    { value: 'all', label: 'All' },
+                    { value: 'low', label: 'Low' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' }
                   ]"
                   :key="filter.value"
                   @click="selectedFilter = filter.value as any"
@@ -300,105 +263,121 @@ const toggleRow = (reqId: string) => {
                 </button>
               </div>
 
-              <!-- Search -->
-              <div class="relative w-64">
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="ค้นหา"
-                  class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="absolute left-3 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              </div>
+              <!-- Right side: Search + Navigation buttons -->
+              <div class="flex items-center gap-4">
+                <!-- Search -->
+                <div class="relative w-64">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search"
+                    class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="absolute left-3 top-2.5 text-gray-400"
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </div>
 
-              <!-- Action Button -->
-              <button
-                @click="handleGenerateSuggestions"
-                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
-              >
-                สร้างข้อเสนอแนะ
-              </button>
+                <!-- Navigation Buttons -->
+                <button
+                  @click="handlePrevious"
+                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </button>
+                <button
+                  @click="handleNext"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-auto">
-            <div class="min-w-full inline-block align-middle">
-              <table class="min-w-full">
-                <thead class="bg-gray-800 sticky top-0 z-10">
-                  <tr class="border-b border-gray-700">
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-white w-24"></th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-white w-32">ReqID</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-white w-64">Module</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-white">Requirement</th>
-                    <th class="px-6 py-4 text-center text-sm font-semibold text-white w-24">Score</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white">
-                  <template v-for="req in paginatedRequirements" :key="req.id">
-                    <tr
-                      @click="toggleRow(req.id)"
-                      class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <td class="px-6 py-4">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <table class="w-full table-fixed">
+              <thead class="bg-gray-800 sticky top-0 z-10">
+                <tr class="border-b border-gray-700">
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 50px;"></th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">Requirement</th>
+                  <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 80px;">Score</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white">
+                <template v-for="req in paginatedRequirements" :key="req.id">
+                  <tr
+                    @click="toggleRow(req.id)"
+                    class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <td class="px-4 py-4">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        :class="[
+                          'transition-transform',
+                          expandedRow === req.id ? 'rotate-90' : ''
+                        ]"
+                      >
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.req_id">{{ req.req_id }}</td>
+                    <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                    <td class="px-4 py-4 text-sm text-gray-900 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
+                    <td class="px-4 py-4">
+                      <div class="flex justify-center">
+                        <span
                           :class="[
-                            'transition-transform',
-                            expandedRow === req.id ? 'rotate-90' : ''
+                            'px-3 py-1 rounded-full text-sm font-semibold',
+                            getScoreBg(req.score),
+                            getScoreColor(req.score)
                           ]"
                         >
-                          <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                      </td>
-                      <td class="px-6 py-4 text-sm text-gray-900">{{ req.req_id }}</td>
-                      <td class="px-6 py-4 text-sm text-gray-900">{{ req.module }}</td>
-                      <td class="px-6 py-4 text-sm text-gray-900">{{ req.requirement }}</td>
-                      <td class="px-6 py-4">
-                        <div class="flex justify-center">
-                          <span
-                            :class="[
-                              'px-3 py-1 rounded-full text-sm font-semibold',
-                              getScoreBg(req.score),
-                              getScoreColor(req.score)
-                            ]"
-                          >
-                            {{ req.score }}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    <!-- Expanded Row -->
-                    <tr v-if="expandedRow === req.id" class="bg-gray-50">
-                      <td colspan="5" class="px-6 py-6">
-                        <div class="grid grid-cols-2 gap-6">
-                          <!-- Passed Criteria -->
+                          {{ req.score }}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Expanded Row -->
+                  <tr v-if="expandedRow === req.id" class="bg-gray-50">
+                    <td colspan="5" class="px-6 py-6">
+                      <div class="flex justify-end">
+                        <!-- Criteria Container - Right aligned, only 2 columns -->
+                        <div class="grid grid-cols-2 gap-6" style="width: 66.666667%;">
+                          <!-- Passed Criteria (Left) -->
                           <div>
                             <h4 class="text-sm font-semibold text-green-700 mb-3">
-                              ✓ ผ่านเกณฑ์ ({{ req.characteristics.length }})
+                              Passed Criteria ({{ req.characteristics.length }})
                             </h4>
                             <div class="space-y-2">
                               <div
@@ -425,10 +404,10 @@ const toggleRow = (reqId: string) => {
                             </div>
                           </div>
 
-                          <!-- Failed Criteria -->
+                          <!-- Failed Criteria (Right) -->
                           <div>
                             <h4 class="text-sm font-semibold text-red-700 mb-3">
-                              ✗ ไม่ผ่านเกณฑ์ ({{ Object.keys(req.evaluation).length }})
+                              Failed Criteria ({{ Object.keys(req.evaluation).length }})
                             </h4>
                             <div class="space-y-3">
                               <div
@@ -442,16 +421,16 @@ const toggleRow = (reqId: string) => {
                             </div>
                           </div>
                         </div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
           </div>
 
           <!-- Pagination -->
-          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2">
+          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2 flex-shrink-0">
             <button
               v-for="page in totalPages"
               :key="page"
@@ -465,52 +444,56 @@ const toggleRow = (reqId: string) => {
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">ทั้งหมด {{ filteredRequirements.length }} รายการ</span>
+            <span class="text-gray-400 text-sm ml-2">Total {{ filteredRequirements.length }} items</span>
+          </div>
+        </div>
+
+        <!-- Empty State (no analysis yet - show Start Analysis button) -->
+        <div v-else class="flex-1 flex items-center justify-center">
+          <div class="text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-700 rounded-full mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="text-gray-400"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <h3 class="text-white text-lg font-semibold mb-2">No analysis yet</h3>
+            <p class="text-gray-400 text-sm mb-6">Click the button below to start analyzing requirements</p>
+            <button
+              @click="startAnalysis"
+              :disabled="isAnalyzing"
+              class="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-full transition"
+            >
+              {{ isAnalyzing ? 'Analyzing...' : 'Start Analysis' }}
+            </button>
           </div>
         </div>
       </main>
     </div>
 
-    <!-- Analysis Modal -->
-    <div
-      v-if="showAnalysisModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click="showAnalysisModal = false"
-    >
-      <div
-        @click.stop
-        class="bg-gray-800 rounded-2xl p-8 w-full max-w-md mx-4"
-      >
-        <h2 class="text-xl font-bold text-white mb-4">เริ่มการวิเคราะห์</h2>
-        <p class="text-gray-400 mb-6">
-          ระบบจะวิเคราะห์ความต้องการทั้งหมดตามมาตรฐาน ISO/IEC/IEEE 29148
-        </p>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="showAnalysisModal = false"
-            class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition"
-          >
-            ยกเลิก
-          </button>
-          <button
-            @click="startAnalysis"
-            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-          >
-            เริ่มวิเคราะห์
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Loading Overlay -->
-    <div 
-      v-if="isAnalyzing || store.isLoading"
+    <div
+      v-if="isAnalyzing"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
       <div class="bg-gray-800 rounded-lg p-6 flex flex-col items-center gap-4 min-w-[300px]">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <div class="text-center">
-          <p class="text-white font-semibold mb-2">กำลังวิเคราะห์...</p>
+          <p class="text-white font-semibold mb-2">Analyzing...</p>
           <p v-if="store.analysisProgress" class="text-gray-400 text-sm">
             {{ store.analysisProgress.completed || 0 }} / {{ store.analysisProgress.total || 0 }}
             ({{ Math.round(store.analysisProgress.percentage || 0) }}%)

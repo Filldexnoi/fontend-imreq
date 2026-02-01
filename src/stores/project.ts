@@ -79,15 +79,53 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const createProject = async (title: string, description: string) => {
+  const createProject = async (
+    title: string,
+    description: string,
+    requirement_template?: string,
+    files?: File[]
+  ) => {
     loadingState.value = 'loading'
     error.value = null
 
     try {
-      const response = await api.project.create({ title, description })
+      const response = await api.project.create({
+        title,
+        description,
+        requirement_template,
+        files
+      })
       await fetchProjects()
       loadingState.value = 'success'
       return response.id
+    } catch (err: any) {
+      error.value = err.message
+      loadingState.value = 'error'
+      throw err
+    }
+  }
+
+  // ✅ NEW: Update project method
+  const updateProject = async (projectId: string, formData: FormData) => {
+    loadingState.value = 'loading'
+    error.value = null
+
+    try {
+      const response = await api.project.update(projectId, formData)
+      
+      // Update the project in the store
+      const index = projects.value.findIndex(p => p.id === projectId)
+      if (index !== -1) {
+        projects.value[index] = response
+      }
+
+      // Update current project if it's the one being edited
+      if (currentProject.value?.id === projectId) {
+        currentProject.value = response
+      }
+
+      loadingState.value = 'success'
+      return response
     } catch (err: any) {
       error.value = err.message
       loadingState.value = 'error'
@@ -291,7 +329,7 @@ export const useProjectStore = defineStore('project', () => {
   const generateSingleSuggestion = async (projectId: string, reqId: string) => {
     loadingState.value = 'loading'
     error.value = null
-    
+
     try {
       const response = await api.suggestion.generateSingle(projectId, reqId)
       loadingState.value = 'success'
@@ -299,6 +337,66 @@ export const useProjectStore = defineStore('project', () => {
     } catch (err: any) {
       error.value = err.message
       loadingState.value = 'error'
+      throw err
+    }
+  }
+
+  // Re-analyze a single requirement and update local state
+  const reanalyzeRequirement = async (projectId: string, reqId: string) => {
+    try {
+      const response = await api.analysis.analyzeSingle(projectId, reqId)
+
+      // Update the local analyzedRequirements array
+      const index = analyzedRequirements.value.findIndex(r => r.req_id === reqId)
+      const existing = analyzedRequirements.value[index]
+      if (index !== -1 && existing) {
+        analyzedRequirements.value[index] = {
+          id: existing.id,
+          req_id: existing.req_id,
+          project_id: existing.project_id,
+          module: existing.module,
+          requirement: existing.requirement,
+          created_at: existing.created_at,
+          updated_at: new Date().toISOString(),
+          score: response.score,
+          characteristics: response.characteristics,
+          evaluation: response.evaluation
+        }
+      }
+
+      return response
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    }
+  }
+
+  // Regenerate a single suggestion and update local state
+  const regenerateSuggestion = async (projectId: string, reqId: string) => {
+    try {
+      const response = await api.suggestion.generateSingle(projectId, reqId)
+
+      // Update the local suggestedRequirements array
+      const index = suggestedRequirements.value.findIndex(s => s.req_id === reqId)
+      const existing = suggestedRequirements.value[index]
+      if (index !== -1 && existing) {
+        suggestedRequirements.value[index] = {
+          id: existing.id,
+          req_id: existing.req_id,
+          project_id: existing.project_id,
+          module: existing.module,
+          original_requirement: existing.original_requirement,
+          original_score: existing.original_score,
+          created_at: existing.created_at,
+          updated_at: new Date().toISOString(),
+          suggested_requirement: response.suggested_requirement,
+          improvements: response.improvements
+        }
+      }
+
+      return response
+    } catch (err: any) {
+      error.value = err.message
       throw err
     }
   }
@@ -444,6 +542,7 @@ export const useProjectStore = defineStore('project', () => {
     // Actions - Projects
     fetchProjects,
     createProject,
+    updateProject, // ✅ NEW: Export updateProject
     deleteProject,
     duplicateProject,
     selectProject,
@@ -463,6 +562,10 @@ export const useProjectStore = defineStore('project', () => {
     generateSingleSuggestion,
     fetchSuggestions,
     generateSuggestionsWithProgress,
+
+    // Actions - Re-analyze/Regenerate
+    reanalyzeRequirement,
+    regenerateSuggestion,
 
     // Actions - Selected Requirements
     fetchSelectedRequirements,

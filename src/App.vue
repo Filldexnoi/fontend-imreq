@@ -1,18 +1,7 @@
-<!-- App.vue - Fixed to use Vue Router -->
+<!-- App.vue - Main Application Entry -->
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useProjectStore } from '@/stores/project';
-
-const store = useProjectStore();
-
-// Load projects on app mount
-onMounted(async () => {
-  try {
-    await store.fetchProjects();
-  } catch (error) {
-    console.error('Failed to load projects:', error);
-  }
-});
+// Auth initialization is handled by router guard
+// Each page handles its own data loading
 </script>
 
 <template>

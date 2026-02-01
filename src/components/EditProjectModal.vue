@@ -1,22 +1,38 @@
-<!-- Create Project Modal - Enhanced with File Upload and Template Selection -->
+<!-- Edit Project Modal - Enhanced with File Upload and Template Selection -->
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useProjectStore } from '@/stores/project';
-import { useRouter } from 'vue-router';
+import type { Project } from '@/types/project';
 
 const projectStore = useProjectStore();
-const router = useRouter();
+
+interface Props {
+  project: Project;
+}
+
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   close: []
+  updated: []
 }>();
 
 const projectName = ref('');
 const projectDescription = ref('');
 const selectedTemplate = ref('Others');
 const referenceFiles = ref<File[]>([]);
+const existingFiles = ref<any[]>([]);
 const errorMessage = ref('');
 const showTemplateInfo = ref(false);
+const isUpdating = ref(false);
+
+// ✅ Track original values to detect changes
+const originalValues = ref({
+  title: '',
+  description: '',
+  template: 'Others',
+  filesCount: 0
+});
 
 const templates = [
   {
@@ -36,6 +52,29 @@ const templates = [
   }
 ];
 
+// Initialize form with existing project data
+onMounted(() => {
+  projectName.value = props.project.title;
+  projectDescription.value = props.project.description;
+  selectedTemplate.value = props.project.requirement_template || 'Others';
+  
+  // Load existing reference files
+  if (props.project.reference_files && Array.isArray(props.project.reference_files)) {
+    existingFiles.value = props.project.reference_files.map((file: any, index: number) => ({
+      ...file,
+      index
+    }));
+  }
+
+  // ✅ Save original values
+  originalValues.value = {
+    title: props.project.title,
+    description: props.project.description,
+    template: props.project.requirement_template || 'Others',
+    filesCount: props.project.reference_files?.length || 0
+  }
+});
+
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files) {
@@ -46,8 +85,12 @@ const handleFileSelect = (event: Event) => {
   target.value = '';
 };
 
-const removeFile = (index: number) => {
+const removeNewFile = (index: number) => {
   referenceFiles.value.splice(index, 1);
+};
+
+const removeExistingFile = (index: number) => {
+  existingFiles.value.splice(index, 1);
 };
 
 const formatFileSize = (bytes: number): string => {
@@ -62,24 +105,60 @@ const handleSubmit = async () => {
     return;
   }
 
+  isUpdating.value = true;
+  errorMessage.value = '';
+
   try {
-    errorMessage.value = '';
-    const projectId = await projectStore.createProject(
-      projectName.value,
-      projectDescription.value,
-      selectedTemplate.value,
-      referenceFiles.value.length > 0 ? referenceFiles.value : undefined
-    );
+    // ✅ Check what has changed
+    const titleChanged = projectName.value !== originalValues.value.title
+    const descriptionChanged = projectDescription.value !== originalValues.value.description
+    const templateChanged = selectedTemplate.value !== originalValues.value.template
+    const hasNewFiles = referenceFiles.value.length > 0
+    const filesRemoved = existingFiles.value.length !== originalValues.value.filesCount
 
-    // Navigate to the new project
-    router.push(`/projects/${projectId}/origin-requirements`);
+    // If nothing changed, just close
+    if (!titleChanged && !descriptionChanged && !templateChanged && !hasNewFiles && !filesRemoved) {
+      emit('close')
+      return
+    }
 
+    // Create FormData only with changed fields
+    const formData = new FormData();
+    
+    if (titleChanged) {
+      formData.append('title', projectName.value)
+    }
+    
+    if (descriptionChanged) {
+      formData.append('description', projectDescription.value)
+    }
+    
+    if (templateChanged) {
+      formData.append('requirement_template', selectedTemplate.value)
+    }
+
+    // Add new files if any
+    if (hasNewFiles) {
+      referenceFiles.value.forEach((file) => {
+        formData.append('files', file)
+      })
+    }
+
+    // Call update API
+    await projectStore.updateProject(props.project.id, formData);
+
+    // Refresh projects list
+    await projectStore.fetchProjects();
+
+    emit('updated');
     emit('close');
   } catch (e: any) {
-    console.error('Create project error:', e);
-    errorMessage.value = e.message || 'Failed to create project';
+    console.error('Update project error:', e);
+    errorMessage.value = e.message || 'Failed to update project';
+  } finally {
+    isUpdating.value = false;
   }
-}
+};
 
 const handleClose = () => {
   emit('close');
@@ -100,7 +179,7 @@ const handleClose = () => {
         <div class="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
         </div>
-        <h2 class="text-2xl font-bold text-white">Create New Project</h2>
+        <h2 class="text-2xl font-bold text-white">Edit Project</h2>
       </div>
 
       <!-- Error Message -->
@@ -130,9 +209,42 @@ const handleClose = () => {
         ></textarea>
       </div>
 
-      <!-- Upload Reference Files -->
+      <!-- Existing Reference Files -->
+      <div v-if="existingFiles.length > 0" class="mb-5">
+        <label class="block text-white text-sm mb-2">Existing Reference Files</label>
+        <div class="bg-gray-700 rounded-lg p-4">
+          <div class="space-y-2">
+            <div
+              v-for="(file, index) in existingFiles"
+              :key="'existing-' + index"
+              class="flex items-center justify-between bg-gray-600 rounded-lg px-3 py-2"
+            >
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span class="text-white text-sm truncate max-w-xs">{{ file.name }}</span>
+                <span class="text-gray-400 text-xs">({{ formatFileSize(file.size) }})</span>
+                <span class="text-green-400 text-xs px-2 py-0.5 bg-green-500 bg-opacity-20 rounded">Existing</span>
+              </div>
+              <button
+                @click="removeExistingFile(index)"
+                class="p-1 hover:bg-gray-500 rounded transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload New Reference Files -->
       <div class="mb-5">
-        <label class="block text-white text-sm mb-2">Upload Reference Files</label>
+        <label class="block text-white text-sm mb-2">Upload New Reference Files</label>
         <div class="bg-gray-700 rounded-lg p-4">
           <div class="flex items-center gap-4 mb-3">
             <label class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg cursor-pointer transition text-sm">
@@ -148,11 +260,11 @@ const handleClose = () => {
             <span class="text-gray-400 text-sm">PDF, DOC, TXT, CSV, Excel supported</span>
           </div>
 
-          <!-- File List -->
+          <!-- New File List -->
           <div v-if="referenceFiles.length > 0" class="space-y-2">
             <div
               v-for="(file, index) in referenceFiles"
-              :key="index"
+              :key="'new-' + index"
               class="flex items-center justify-between bg-gray-600 rounded-lg px-3 py-2"
             >
               <div class="flex items-center gap-2">
@@ -162,9 +274,10 @@ const handleClose = () => {
                 </svg>
                 <span class="text-white text-sm truncate max-w-xs">{{ file.name }}</span>
                 <span class="text-gray-400 text-xs">({{ formatFileSize(file.size) }})</span>
+                <span class="text-blue-400 text-xs px-2 py-0.5 bg-blue-500 bg-opacity-20 rounded">New</span>
               </div>
               <button
-                @click="removeFile(index)"
+                @click="removeNewFile(index)"
                 class="p-1 hover:bg-gray-500 rounded transition"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400">
@@ -174,7 +287,7 @@ const handleClose = () => {
               </button>
             </div>
           </div>
-          <p v-else class="text-gray-500 text-sm">No files selected</p>
+          <p v-else class="text-gray-500 text-sm">No new files selected</p>
         </div>
       </div>
 
@@ -191,7 +304,7 @@ const handleClose = () => {
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            View Descriptions
+            {{ showTemplateInfo ? 'Hide' : 'View' }} Descriptions
           </button>
         </div>
 
@@ -232,21 +345,38 @@ const handleClose = () => {
       <div class="flex justify-between mt-8">
         <button
           @click="handleClose"
-          class="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition"
+          :disabled="isUpdating"
+          class="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           @click="handleSubmit"
-          :disabled="!projectName || !projectDescription || projectStore.isLoading"
+          :disabled="!projectName || !projectDescription || isUpdating"
           :class="[
-            'px-8 py-3 rounded-full transition',
-            projectName && projectDescription && !projectStore.isLoading
+            'px-8 py-3 rounded-full transition flex items-center gap-2',
+            projectName && projectDescription && !isUpdating
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"
         >
-          {{ projectStore.isLoading ? 'Creating...' : 'Create Project' }}
+          <svg
+            v-if="isUpdating"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="animate-spin"
+          >
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 21h5v-5"/>
+          </svg>
+          {{ isUpdating ? 'Updating...' : 'Update Project' }}
         </button>
       </div>
     </div>

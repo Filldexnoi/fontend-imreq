@@ -72,6 +72,10 @@ const handleBack = () => {
   router.push(`/projects/${projectId.value}/compare`)
 }
 
+const handlePrevious = () => {
+  router.push(`/projects/${projectId.value}/compare`)
+}
+
 const handleDownload = async () => {
   isDownloading.value = true
 
@@ -93,9 +97,9 @@ const goToPage = (page: number) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 flex flex-col">
+  <div class="h-screen bg-gray-900 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700">
+    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button @click="handleBack" class="p-2 hover:bg-gray-700 rounded-lg transition">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -116,7 +120,7 @@ const goToPage = (page: number) => {
       </div>
     </header>
 
-    <div class="flex-1 flex min-h-0">
+    <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- Sidebar -->
       <WorkflowSidebar
         :project-id="projectId"
@@ -128,7 +132,7 @@ const goToPage = (page: number) => {
       />
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col bg-gray-900 min-h-0">
+      <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
         <!-- Empty State -->
         <div v-if="!hasSelected" class="flex-1 flex items-center justify-center">
           <div class="text-center">
@@ -151,9 +155,9 @@ const goToPage = (page: number) => {
         </div>
 
         <!-- Requirements Table -->
-        <div v-else class="flex-1 flex flex-col">
+        <div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <!-- Stats & Toolbar -->
-          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700">
+          <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
             <div class="flex items-center justify-between gap-4">
               <!-- Left: Stats -->
               <div class="flex items-center gap-6">
@@ -163,52 +167,64 @@ const goToPage = (page: number) => {
                 </div>
               </div>
 
-              <!-- Center: Search -->
-              <div class="relative w-64">
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="Search"
-                  class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  class="absolute left-3 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              </div>
+              <!-- Right: Search + Navigation Buttons -->
+              <div class="flex items-center gap-4">
+                <!-- Search -->
+                <div class="relative w-64">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search"
+                    class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="absolute left-3 top-2.5 text-gray-400"
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </div>
 
-              <!-- Right: Download Button -->
-              <button
-                @click="handleDownload"
-                :disabled="isDownloading"
-                class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                {{ isDownloading ? 'Downloading...' : 'Download CSV' }}
-              </button>
+                <!-- Navigation Buttons -->
+                <button
+                  @click="handlePrevious"
+                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </button>
+                <button
+                  @click="handleDownload"
+                  :disabled="isDownloading"
+                  class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  {{ isDownloading ? 'Downloading...' : 'Download CSV' }}
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-auto">
-            <table class="min-w-full">
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <table class="w-full table-fixed">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-32">ReqID</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-48">Module</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
                   <th class="px-6 py-4 text-left text-sm font-semibold text-white">Requirement</th>
                 </tr>
               </thead>
@@ -218,16 +234,16 @@ const goToPage = (page: number) => {
                   :key="req.id"
                   class="border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ req.req_id }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900">{{ req.module }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-700">{{ req.requirement }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 font-medium truncate" :title="req.req_id">{{ req.req_id }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <!-- Pagination -->
-          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2">
+          <div class="bg-gray-800 px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-2 flex-shrink-0">
             <button
               v-for="page in totalPages"
               :key="page"

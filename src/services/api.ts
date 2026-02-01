@@ -1,27 +1,43 @@
 // src/services/api.ts - Complete API Service Module
-import type { 
-  Project, 
-  OriginRequirement, 
-  AnalyzedRequirement, 
+import type {
+  Project,
+  OriginRequirement,
+  AnalyzedRequirement,
   SuggestedRequirement,
   SelectedRequirement,
-  ColumnMapping 
+  ColumnMapping
 } from '@/types/project'
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const TOKEN_KEY = 'auth_token'
 
 // ============================================
 // Helper Functions
 // ============================================
 
-// Helper function for fetch requests
+// Get auth token from localStorage
+function getAuthToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+// Helper function for fetch requests (with auth)
 async function fetchAPI(url: string, options?: RequestInit) {
+  const token = getAuthToken()
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  }
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   })
 
   if (!response.ok) {
@@ -32,11 +48,21 @@ async function fetchAPI(url: string, options?: RequestInit) {
   return response.json()
 }
 
-// Helper function for file upload
+// Helper function for file upload (with auth)
 async function uploadFile(url: string, formData: FormData) {
+  const token = getAuthToken()
+
+  const headers: Record<string, string> = {}
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_BASE_URL}${url}`, {
     method: 'POST',
     body: formData,
+    headers,
     // Don't set Content-Type header - browser will set it with boundary
   })
 
@@ -46,6 +72,100 @@ async function uploadFile(url: string, formData: FormData) {
   }
 
   return response.json()
+}
+
+// ✅ NEW: Helper function for file update (with auth)
+async function updateWithFile(url: string, formData: FormData) {
+  const token = getAuthToken()
+
+  const headers: Record<string, string> = {}
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method: 'PUT',
+    body: formData,
+    headers,
+    // Don't set Content-Type header - browser will set it with boundary
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Update failed' }))
+    throw new Error(error.detail || 'Failed to update')
+  }
+
+  return response.json()
+}
+
+// ============================================
+// Auth API
+// ============================================
+
+export const authAPI = {
+  // Login
+  login: async (credentials: LoginRequest): Promise<AuthResponse> => {
+    // Backend expects JSON body with username and password
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: credentials.username,
+        password: credentials.password,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Login failed' }))
+      throw new Error(error.detail || 'Login failed')
+    }
+
+    return response.json()
+  },
+
+  // Register - returns User (not AuthResponse, user must login after)
+  register: async (data: RegisterRequest): Promise<User> => {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Registration failed' }))
+      throw new Error(error.detail || 'Registration failed')
+    }
+
+    return response.json()
+  },
+
+  // Get current user
+  getCurrentUser: async (): Promise<User> => {
+    return fetchAPI('/auth/me')
+  },
+
+  // Update profile
+  updateProfile: async (data: Partial<User>): Promise<User> => {
+    return fetchAPI('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+
+  // Logout
+  logout: async (): Promise<void> => {
+    try {
+      await fetchAPI('/auth/logout', { method: 'POST' })
+    } catch {
+      // Ignore errors on logout
+    }
+  },
 }
 
 // ============================================
@@ -63,23 +183,33 @@ export const projectAPI = {
     return fetchAPI(`/projects/${projectId}`)
   },
 
-  // Create project
-  create: async (project: { title: string; description: string }): Promise<{ id: string }> => {
-    return fetchAPI('/projects', {
-      method: 'POST',
-      body: JSON.stringify(project),
-    })
+  // Create project with optional files and template
+  create: async (project: {
+    title: string;
+    description: string;
+    requirement_template?: string;
+    files?: File[];
+  }): Promise<{ id: string }> => {
+    const formData = new FormData()
+    formData.append('title', project.title)
+    formData.append('description', project.description)
+    formData.append('requirement_template', project.requirement_template || 'Others')
+
+    if (project.files && project.files.length > 0) {
+      project.files.forEach(file => {
+        formData.append('files', file)
+      })
+    }
+
+    return uploadFile('/projects', formData)
   },
 
-  // Update project (if you want to add this later)
-  update: async (projectId: string, project: Partial<{ title: string; description: string }>): Promise<Project> => {
-    return fetchAPI(`/projects/${projectId}`, {
-      method: 'PUT',
-      body: JSON.stringify(project),
-    })
+  // ✅ UPDATED: Update project with optional files and template
+  update: async (projectId: string, formData: FormData): Promise<Project> => {
+    return updateWithFile(`/projects/${projectId}`, formData)
   },
 
-  // Delete project (if you want to add this later)
+  // Delete project
   delete: async (projectId: string): Promise<void> => {
     return fetchAPI(`/projects/${projectId}`, {
       method: 'DELETE',
@@ -191,7 +321,7 @@ export const suggestionAPI = {
 }
 
 // ============================================
-// Selected Requirements API (NEW!)
+// Selected Requirements API
 // ============================================
 
 export const selectedRequirementAPI = {
@@ -294,11 +424,12 @@ export const websocketAPI = {
 // ============================================
 
 export default {
+  auth: authAPI,
   project: projectAPI,
   originRequirement: originRequirementAPI,
   analysis: analysisAPI,
   suggestion: suggestionAPI,
-  selectedRequirement: selectedRequirementAPI,  // ← NEW!
+  selectedRequirement: selectedRequirementAPI,
   export: exportAPI,
   websocket: websocketAPI,
 }

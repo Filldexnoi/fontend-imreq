@@ -51,8 +51,8 @@ const isValid = () => {
     >
       <!-- Modal Header -->
       <div class="mb-6">
-        <h2 class="text-xl font-bold text-white mb-2">จับคู่คอลัมน์</h2>
-        <p class="text-gray-400 text-sm">ไฟล์: {{ fileName }}</p>
+        <h2 class="text-xl font-bold text-white mb-2">Map Columns</h2>
+        <p class="text-gray-400 text-sm">File: {{ fileName }}</p>
       </div>
 
       <!-- Mapping Fields -->
@@ -62,14 +62,14 @@ const isValid = () => {
           <div class="mb-3">
             <h3 class="text-white font-semibold mb-1">ReqID</h3>
             <p class="text-gray-400 text-xs">
-              * รหัสที่ใช้ระบุความต้องการแต่ละตัว (เช่น REQ001, REQ002)
+              * Unique identifier for each requirement (e.g., REQ001, REQ002)
             </p>
           </div>
           <select
             v-model="mapping.reqId"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>เลือกคอลัมน์</option>
+            <option value="" disabled>Select column</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
         </div>
@@ -79,14 +79,14 @@ const isValid = () => {
           <div class="mb-3">
             <h3 class="text-white font-semibold mb-1">Module</h3>
             <p class="text-gray-400 text-xs">
-              * กลุ่มหรือหมวดหมู่ของความต้องการ (เช่น User Authentication, Transaction Recording)
+              * Group or category of the requirement (e.g., User Authentication, Transaction Recording)
             </p>
           </div>
           <select
             v-model="mapping.module"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>เลือกคอลัมน์</option>
+            <option value="" disabled>Select column</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
         </div>
@@ -96,14 +96,14 @@ const isValid = () => {
           <div class="mb-3">
             <h3 class="text-white font-semibold mb-1">Requirement</h3>
             <p class="text-gray-400 text-xs">
-              * รายละเอียดของความต้องการของระบบ
+              * System requirement description
             </p>
           </div>
           <select
             v-model="mapping.requirement"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>เลือกคอลัมน์</option>
+            <option value="" disabled>Select column</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
         </div>
@@ -111,7 +111,7 @@ const isValid = () => {
 
       <!-- Preview Section -->
       <div v-if="isValid()" class="bg-gray-700 rounded-lg p-4 mb-6">
-        <h3 class="text-white font-semibold mb-3">ตัวอย่างการจับคู่</h3>
+        <h3 class="text-white font-semibold mb-3">Mapping Preview</h3>
         <div class="space-y-2 text-sm">
           <div class="flex justify-between text-gray-300">
             <span>ReqID:</span>
@@ -134,7 +134,7 @@ const isValid = () => {
           @click="handleClose"
           class="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition"
         >
-          ยกเลิก
+          Cancel
         </button>
         <button
           @click="handleConfirm"
@@ -146,7 +146,7 @@ const isValid = () => {
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"
         >
-          บันทึก
+          Save
         </button>
       </div>
     </div>
