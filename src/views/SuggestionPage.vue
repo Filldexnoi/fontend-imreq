@@ -17,7 +17,6 @@ const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const isGenerating = ref(false)
-const showGenerateModal = ref(false)
 const expandedRow = ref<string | null>(null)
 
 // Stage tracking
@@ -42,10 +41,17 @@ onMounted(async () => {
   }
 })
 
+// Sort suggestions by req_id (natural sort)
+const sortedSuggestions = computed(() => {
+  return [...suggestions.value].sort((a, b) => {
+    return a.req_id.localeCompare(b.req_id, undefined, { numeric: true, sensitivity: 'base' })
+  })
+})
+
 // Filter and pagination
 const filteredSuggestions = computed(() => {
-  let filtered = [...suggestions.value]
-  
+  let filtered = [...sortedSuggestions.value]
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(sug =>
@@ -55,7 +61,7 @@ const filteredSuggestions = computed(() => {
       sug.suggested_requirement.toLowerCase().includes(query)
     )
   }
-  
+
   return filtered
 })
 
@@ -74,12 +80,15 @@ const handleBack = () => {
   router.push(`/projects/${projectId.value}/analysis`)
 }
 
-const handleGenerate = () => {
-  showGenerateModal.value = true
+const handlePrevious = () => {
+  router.push(`/projects/${projectId.value}/analysis`)
 }
 
-const startGeneration = async () => {
-  showGenerateModal.value = false
+const handleNext = () => {
+  router.push(`/projects/${projectId.value}/compare`)
+}
+
+const handleGenerate = async () => {
   isGenerating.value = true
 
   try {
@@ -87,14 +96,10 @@ const startGeneration = async () => {
     await store.fetchSuggestions(projectId.value)
   } catch (error) {
     console.error('Generation failed:', error)
-    alert('เกิดข้อผิดพลาดในการสร้างข้อเสนอแนะ')
+    alert('Failed to generate suggestions')
   } finally {
     isGenerating.value = false
   }
-}
-
-const handleGoToCompare = () => {
-  router.push(`/projects/${projectId.value}/compare`)
 }
 
 const goToPage = (page: number) => {
@@ -123,9 +128,9 @@ const getScoreBg = (score: string) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 flex flex-col">
+  <div class="h-screen bg-gray-900 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700">
+    <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button
         @click="handleBack"
         class="p-2 hover:bg-gray-700 rounded-lg transition"
@@ -162,7 +167,7 @@ const getScoreBg = (score: string) => {
       </div>
     </header>
 
-    <div class="flex-1 flex min-h-0">
+    <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- Sidebar -->
       <WorkflowSidebar
         :project-id="projectId"
@@ -173,7 +178,7 @@ const getScoreBg = (score: string) => {
       />
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col bg-gray-900 min-h-0">
+      <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
         <!-- Empty State -->
         <div v-if="!hasSuggestions" class="flex-1 flex items-center justify-center">
           <div class="text-center">
@@ -194,59 +199,74 @@ const getScoreBg = (score: string) => {
                 <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
               </svg>
             </div>
-            <h3 class="text-white text-lg font-semibold mb-2">ยังไม่มีข้อเสนอแนะ</h3>
-            <p class="text-gray-400 text-sm mb-6">กรุณาสร้างข้อเสนอแนะสำหรับความต้องการ</p>
+            <h3 class="text-white text-lg font-semibold mb-2">No suggestions yet</h3>
+            <p class="text-gray-400 text-sm mb-6">Please generate suggestions for requirements</p>
             <button
               @click="handleGenerate"
               class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition"
             >
-              สร้างข้อเสนอแนะ
+              Generate Suggestions
             </button>
           </div>
         </div>
 
         <!-- Results State -->
-        <div v-else class="flex-1 flex flex-col min-h-0">
+        <div v-else class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <!-- Toolbar -->
           <div class="bg-gray-800 px-6 py-4 border-b border-gray-700 flex-shrink-0">
             <div class="flex items-center justify-between gap-4">
               <!-- Left: Info -->
               <span class="text-gray-400 text-sm">
-                แสดงข้อเสนอแนะทั้งหมด {{ filteredSuggestions.length }} รายการ
+                Showing {{ filteredSuggestions.length }} suggestions
               </span>
 
-              <!-- Center: Search -->
-              <div class="relative w-64">
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="ค้นหา"
-                  class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="absolute left-3 top-2.5 text-gray-400"
-                >
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              </div>
+              <!-- Right: Search + Navigation buttons -->
+              <div class="flex items-center gap-4">
+                <!-- Search -->
+                <div class="relative w-64">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search"
+                    class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="absolute left-3 top-2.5 text-gray-400"
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </div>
 
-              <!-- Right: Action Button -->
-              <button
-                @click="handleGoToCompare"
-                class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
-              >
-                ไปที่หน้าเปรียบเทียบ
-              </button>
+                <!-- Navigation Buttons -->
+                <button
+                  @click="handlePrevious"
+                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </button>
+                <button
+                  @click="handleNext"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                >
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -255,12 +275,12 @@ const getScoreBg = (score: string) => {
             <table class="w-full table-fixed">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-16"></th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-32">ReqID</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white w-40">Module</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white">Original</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white">AI Suggestion</th>
-                  <th class="px-6 py-4 text-center text-sm font-semibold text-white w-24">Score</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 50px;"></th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 100px;">ReqID</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 180px;">Module</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">Original</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">AI Suggestion</th>
+                  <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 70px;">Score</th>
                 </tr>
               </thead>
               <tbody class="bg-white">
@@ -269,7 +289,7 @@ const getScoreBg = (score: string) => {
                     @click="toggleRow(sug.id)"
                     class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                   >
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-4">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -288,12 +308,12 @@ const getScoreBg = (score: string) => {
                         <polyline points="9 18 15 12 9 6"/>
                       </svg>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ sug.req_id }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ sug.module }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">
-                      <div class="line-clamp-2">{{ sug.original_requirement }}</div>
+                    <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.req_id">{{ sug.req_id }}</td>
+                    <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
+                    <td class="px-4 py-4 text-sm text-gray-900">
+                      <div class="whitespace-pre-wrap break-words">{{ sug.original_requirement }}</div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">
+                    <td class="px-4 py-4 text-sm text-gray-900">
                       <div class="flex items-start gap-2">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -309,10 +329,10 @@ const getScoreBg = (score: string) => {
                         >
                           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
-                        <div class="line-clamp-2">{{ sug.suggested_requirement }}</div>
+                        <div class="whitespace-pre-wrap break-words">{{ sug.suggested_requirement }}</div>
                       </div>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-4">
                       <div class="flex justify-center">
                         <span
                           :class="[
@@ -348,7 +368,7 @@ const getScoreBg = (score: string) => {
                               >
                                 <circle cx="12" cy="12" r="10"/>
                               </svg>
-                              ข้อความเดิม (เต็ม)
+                              Original (Full)
                             </h4>
                             <p class="text-sm text-gray-900">{{ sug.original_requirement }}</p>
                           </div>
@@ -368,7 +388,7 @@ const getScoreBg = (score: string) => {
                               >
                                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                               </svg>
-                              ข้อความที่แนะนำ (เต็ม)
+                              Suggested (Full)
                             </h4>
                             <p class="text-sm text-gray-900">{{ sug.suggested_requirement }}</p>
                           </div>
@@ -376,7 +396,7 @@ const getScoreBg = (score: string) => {
 
                         <!-- Improvements -->
                         <div>
-                          <h4 class="text-sm font-semibold text-gray-700 mb-3">รายละเอียดการปรับปรุง:</h4>
+                          <h4 class="text-sm font-semibold text-gray-700 mb-3">Improvement Details:</h4>
                           <div class="grid grid-cols-2 gap-3">
                             <div
                               v-for="(improvement, criterion) in sug.improvements"
@@ -411,41 +431,10 @@ const getScoreBg = (score: string) => {
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">ทั้งหมด {{ filteredSuggestions.length }} รายการ</span>
+            <span class="text-gray-400 text-sm ml-2">Total {{ filteredSuggestions.length }} items</span>
           </div>
         </div>
       </main>
-    </div>
-
-    <!-- Generate Modal -->
-    <div
-      v-if="showGenerateModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click="showGenerateModal = false"
-    >
-      <div
-        @click.stop
-        class="bg-gray-800 rounded-2xl p-8 w-full max-w-md mx-4"
-      >
-        <h2 class="text-xl font-bold text-white mb-4">สร้างข้อเสนอแนะ</h2>
-        <p class="text-gray-400 mb-6">
-          ระบบจะสร้างข้อเสนอแนะสำหรับความต้องการที่ยังไม่ผ่านเกณฑ์
-        </p>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="showGenerateModal = false"
-            class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition"
-          >
-            ยกเลิก
-          </button>
-          <button
-            @click="startGeneration"
-            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-          >
-            เริ่มสร้าง
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Loading Overlay -->
@@ -456,7 +445,7 @@ const getScoreBg = (score: string) => {
       <div class="bg-gray-800 rounded-lg p-6 flex flex-col items-center gap-4 min-w-[300px]">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <div class="text-center">
-          <p class="text-white font-semibold mb-2">กำลังสร้างข้อเสนอแนะ...</p>
+          <p class="text-white font-semibold mb-2">Generating suggestions...</p>
           <p v-if="store.suggestionProgress" class="text-gray-400 text-sm">
             {{ store.suggestionProgress.completed || 0 }} / {{ store.suggestionProgress.total || 0 }}
             ({{ Math.round(store.suggestionProgress.percentage || 0) }}%)

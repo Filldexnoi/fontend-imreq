@@ -78,8 +78,8 @@ const triggerFileInput = () => {
           <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
       </div>
-      <h3 class="text-white text-lg font-semibold mb-2">อัปโหลดไฟล์ข้อมูล</h3>
-      <p class="text-gray-400 text-sm">รองรับไฟล์นามสกุล .CSV เท่านั้น</p>
+      <h3 class="text-white text-lg font-semibold mb-2">Upload Data File</h3>
+      <p class="text-gray-400 text-sm">Only .CSV files are supported</p>
     </div>
   </div>
 </template>

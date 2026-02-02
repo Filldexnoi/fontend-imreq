@@ -1,20 +1,30 @@
 <!-- Projects Page -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
+import { useAuthStore } from '@/stores/auth'
 import CreateProjectModal from '@/components/CreateProjectModal.vue'
 import ProjectCard from '@/components/ProjectCard.vue'
 import NewProjectCard from '@/components/NewProjectCard.vue'
 import '../assets/analys.css';
 
+const router = useRouter()
 const store = useProjectStore()
+const authStore = useAuthStore()
 
 const showCreateModal = ref(false)
+const showUserMenu = ref(false)
 const searchQuery = ref('')
 
 onMounted(async () => {
   await store.fetchProjects()
 })
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
 
 const filteredProjects = computed(() => {
   let projects = [...store.projects]
@@ -56,24 +66,69 @@ const handleCloseModal = () => {
           Im<span class="font-semibold">Req</span>
         </router-link>
         
-        <!-- User Icon -->
-        <button class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-gray-400"
+        <!-- User Menu -->
+        <div class="relative">
+          <button
+            @click="showUserMenu = !showUserMenu"
+            class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition"
           >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="text-gray-400"
+            >
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div
+            v-if="showUserMenu"
+            class="absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-lg border border-gray-700 py-2 z-50"
+          >
+            <!-- User Info -->
+            <div class="px-4 py-3 border-b border-gray-700">
+              <p class="text-white font-medium">{{ authStore.currentUser?.full_name || authStore.currentUser?.username }}</p>
+              <p class="text-gray-400 text-sm truncate">{{ authStore.currentUser?.email }}</p>
+            </div>
+
+            <!-- Menu Items -->
+            <button
+              @click="handleLogout"
+              class="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center gap-2 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logout
+            </button>
+          </div>
+
+          <!-- Overlay to close menu -->
+          <div
+            v-if="showUserMenu"
+            @click="showUserMenu = false"
+            class="fixed inset-0 z-40"
+          ></div>
+        </div>
       </div>
     </header>
 
@@ -83,7 +138,7 @@ const handleCloseModal = () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="ค้นหาโปรเจกต์..."
+          placeholder="Search projects..."
           class="w-full pl-10 pr-4 py-3 bg-gray-800 text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-700 placeholder-gray-500"
         />
         <svg
@@ -117,22 +172,22 @@ const handleCloseModal = () => {
 
       <!-- Empty State -->
       <div v-else-if="filteredProjects.length === 0 && searchQuery" class="text-center py-20">
-        <p class="text-gray-400 text-lg mb-4">ไม่พบโปรเจกต์ที่ตรงกับ "{{ searchQuery }}"</p>
+        <p class="text-gray-400 text-lg mb-4">No projects found matching "{{ searchQuery }}"</p>
         <button
           @click="searchQuery = ''"
           class="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl transition"
         >
-          ล้างการค้นหา
+          Clear Search
         </button>
       </div>
 
       <div v-else-if="store.projects.length === 0" class="text-center py-20">
-        <p class="text-gray-400 text-lg mb-6">ยังไม่มีโปรเจกต์</p>
+        <p class="text-gray-400 text-lg mb-6">No projects yet</p>
         <button
           @click="handleCreateProject"
           class="px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 rounded-2xl font-light transition"
         >
-          + สร้างโปรเจกต์แรก
+          + Create First Project
         </button>
       </div>
 
