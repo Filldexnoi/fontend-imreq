@@ -26,7 +26,7 @@ const router = useRouter()
 const canNavigateToAnalysis = computed(() => props.hasOriginRequirements)
 const canNavigateToSuggestions = computed(() => props.hasAnalysis)
 const canNavigateToCompare = computed(() => props.hasSuggestions)
-const canNavigateToExport = computed(() => props.hasSelected) // Export accessible after compare & selection
+const canNavigateToExport = computed(() => props.hasSuggestions || props.hasSelected)
 
 const navigateTo = (step: string) => {
   if (step === 'origin' && props.projectId) {
@@ -63,9 +63,9 @@ const isStepActive = (step: string) => {
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center transition',
           hasOriginRequirements
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : isStepActive('upload')
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -104,9 +104,9 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           hasOriginRequirements
-            ? 'text-blue-400'
+            ? 'text-white'
             : isStepActive('upload')
-            ? 'text-blue-400'
+            ? 'text-white'
             : 'text-gray-600'
         ]">Upload<br/>requirements</span>
       </button>
@@ -142,9 +142,9 @@ const isStepActive = (step: string) => {
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
           hasAnalysis
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : isStepActive('analysis')
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -182,9 +182,9 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           hasAnalysis
-            ? 'text-blue-400'
+            ? 'text-white'
             : isStepActive('analysis')
-            ? 'text-blue-400'
+            ? 'text-white'
             : canNavigateToAnalysis
             ? 'text-gray-400'
             : 'text-gray-600'
@@ -222,9 +222,9 @@ const isStepActive = (step: string) => {
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
           hasSuggestions
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : isStepActive('suggestions')
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -262,9 +262,9 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           hasSuggestions
-            ? 'text-blue-400'
+            ? 'text-white'
             : isStepActive('suggestions')
-            ? 'text-blue-400'
+            ? 'text-white'
             : canNavigateToSuggestions
             ? 'text-gray-400'
             : 'text-gray-600'
@@ -301,29 +301,11 @@ const isStepActive = (step: string) => {
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasSelected
-            ? 'bg-blue-600'
-            : isStepActive('compare')
-            ? 'bg-blue-600'
+          isStepActive('compare')
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
-            v-if="hasSelected"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-white"
-          >
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <svg
-            v-else
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
@@ -342,10 +324,8 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasSelected
-            ? 'text-blue-400'
-            : isStepActive('compare')
-            ? 'text-blue-400'
+          isStepActive('compare')
+            ? 'text-white'
             : canNavigateToCompare
             ? 'text-gray-400'
             : 'text-gray-600'
@@ -406,7 +386,7 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           isStepActive('export')
-            ? 'text-blue-400'
+            ? 'text-white'
             : canNavigateToExport
             ? 'text-gray-400'
             : 'text-gray-600'

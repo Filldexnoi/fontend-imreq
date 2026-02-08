@@ -205,7 +205,7 @@ const getScoreBg = (score: string | undefined) => {
               {{ project?.title || 'Requirement List' }}
             </h1>
             <span class="text-gray-400 text-sm">•</span>
-            <span class="text-blue-400 text-sm font-medium">Step 1: Upload requirements</span>
+            <span class="text-blue-400 text-sm font-medium">Step 4: Compare versions</span>
           </div>
         </div>
       </div>
