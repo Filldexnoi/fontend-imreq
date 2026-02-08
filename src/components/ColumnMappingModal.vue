@@ -19,15 +19,22 @@ interface ColumnMapping {
   requirement: string
 }
 
-const mapping = ref<ColumnMapping>({
-  reqId: '',
-  module: '',
+// Use special sentinel values for "none" selections
+const NONE_VALUE = '__none__'
+
+const mapping = ref({
+  reqId: NONE_VALUE,
+  module: NONE_VALUE,
   requirement: ''
 })
 
 const handleConfirm = () => {
   if (isValid()) {
-    emit('confirm', mapping.value)
+    emit('confirm', {
+      reqId: mapping.value.reqId === NONE_VALUE ? '' : mapping.value.reqId,
+      module: mapping.value.module === NONE_VALUE ? '' : mapping.value.module,
+      requirement: mapping.value.requirement
+    })
   }
 }
 
@@ -36,7 +43,7 @@ const handleClose = () => {
 }
 
 const isValid = () => {
-  return mapping.value.reqId && mapping.value.module && mapping.value.requirement
+  return mapping.value.requirement !== ''
 }
 </script>
 
@@ -51,80 +58,70 @@ const isValid = () => {
     >
       <!-- Modal Header -->
       <div class="mb-6">
-        <h2 class="text-xl font-bold text-white mb-2">Map Columns</h2>
+        <h2 class="text-xl font-bold text-white mb-2">Column Mapping</h2>
         <p class="text-gray-400 text-sm">File: {{ fileName }}</p>
       </div>
 
       <!-- Mapping Fields -->
       <div class="space-y-4 mb-8">
-        <!-- ReqID Mapping -->
+        <!-- ReqID Mapping (Optional) -->
         <div class="bg-gray-700 rounded-lg p-4">
           <div class="mb-3">
-            <h3 class="text-white font-semibold mb-1">ReqID</h3>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-white font-semibold">ReqID</h3>
+              <span class="text-xs text-gray-400 bg-gray-600 px-2 py-0.5 rounded">Optional</span>
+            </div>
             <p class="text-gray-400 text-xs">
-              * Unique identifier for each requirement (e.g., REQ001, REQ002)
+              Identifier for each requirement (e.g. REQ001, REQ002). If not selected, it will be auto-generated.
             </p>
           </div>
           <select
             v-model="mapping.reqId"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>Select column</option>
+            <option :value="NONE_VALUE">None (Auto-generate)</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
         </div>
 
-        <!-- Module Mapping -->
+        <!-- Module Mapping (Optional) -->
         <div class="bg-gray-700 rounded-lg p-4">
           <div class="mb-3">
-            <h3 class="text-white font-semibold mb-1">Module</h3>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-white font-semibold">Module</h3>
+              <span class="text-xs text-gray-400 bg-gray-600 px-2 py-0.5 rounded">Optional</span>
+            </div>
             <p class="text-gray-400 text-xs">
-              * Group or category of the requirement (e.g., User Authentication, Transaction Recording)
+              Group or category of the requirement (e.g. User Authentication). If not selected, this column will be hidden.
             </p>
           </div>
           <select
             v-model="mapping.module"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>Select column</option>
+            <option :value="NONE_VALUE">None</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
         </div>
 
-        <!-- Requirement Mapping -->
+        <!-- Requirement Mapping (Required) -->
         <div class="bg-gray-700 rounded-lg p-4">
           <div class="mb-3">
-            <h3 class="text-white font-semibold mb-1">Requirement</h3>
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-white font-semibold">Requirement</h3>
+              <span class="text-xs text-red-400 bg-red-900 bg-opacity-30 px-2 py-0.5 rounded">Required</span>
+            </div>
             <p class="text-gray-400 text-xs">
-              * System requirement description
+              * Description of the system requirement
             </p>
           </div>
           <select
             v-model="mapping.requirement"
             class="w-full px-4 py-3 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="" disabled>Select column</option>
+            <option value="" disabled>Select a column</option>
             <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
           </select>
-        </div>
-      </div>
-
-      <!-- Preview Section -->
-      <div v-if="isValid()" class="bg-gray-700 rounded-lg p-4 mb-6">
-        <h3 class="text-white font-semibold mb-3">Mapping Preview</h3>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between text-gray-300">
-            <span>ReqID:</span>
-            <span class="text-blue-400">{{ mapping.reqId }}</span>
-          </div>
-          <div class="flex justify-between text-gray-300">
-            <span>Module:</span>
-            <span class="text-blue-400">{{ mapping.module }}</span>
-          </div>
-          <div class="flex justify-between text-gray-300">
-            <span>Requirement:</span>
-            <span class="text-blue-400">{{ mapping.requirement }}</span>
-          </div>
         </div>
       </div>
 
@@ -146,7 +143,7 @@ const isValid = () => {
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"
         >
-          Save
+          Confirm
         </button>
       </div>
     </div>

@@ -100,21 +100,39 @@ const goToPage = (page: number) => {
   <div class="h-screen bg-gray-900 flex flex-col overflow-hidden">
     <!-- Header -->
     <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
-      <button @click="handleBack" class="p-2 hover:bg-gray-700 rounded-lg transition">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+      <button
+        @click="router.push('/projects')"
+        class="p-2 hover:bg-gray-700 rounded-lg transition"
+        title="Back to Projects"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-white"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </button>
-
+      
       <div class="flex items-center gap-3 flex-1">
         <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
         </div>
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-semibold text-white">{{ project?.title || 'Export Requirements' }}</h1>
+            <h1 class="text-xl font-semibold text-white">
+              {{ project?.title || 'Requirement List' }}
+            </h1>
             <span class="text-gray-400 text-sm">•</span>
-            <span class="text-green-400 text-sm font-medium">Step 5: Export Requirements</span>
+            <span class="text-blue-400 text-sm font-medium">Step 1: Upload requirements</span>
           </div>
         </div>
       </div>
@@ -205,7 +223,7 @@ const goToPage = (page: number) => {
                 <button
                   @click="handleDownload"
                   :disabled="isDownloading"
-                  class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

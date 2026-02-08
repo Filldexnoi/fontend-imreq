@@ -132,8 +132,9 @@ const getScoreBg = (score: string) => {
     <!-- Header -->
     <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button
-        @click="handleBack"
+        @click="router.push('/projects')"
         class="p-2 hover:bg-gray-700 rounded-lg transition"
+        title="Back to Projects"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -147,21 +148,22 @@ const getScoreBg = (score: string) => {
           stroke-linejoin="round"
           class="text-white"
         >
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </button>
       
-     <div class="flex items-center gap-3 flex-1">
+      <div class="flex items-center gap-3 flex-1">
         <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
         </div>
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
             <h1 class="text-xl font-semibold text-white">
-              {{ project?.title || 'Suggestions' }}
+              {{ project?.title || 'Requirement List' }}
             </h1>
             <span class="text-gray-400 text-sm">•</span>
-            <span class="text-blue-400 text-sm font-medium">Step 3: Suggest improvements</span>
+            <span class="text-blue-400 text-sm font-medium">Step 1: Upload requirements</span>
           </div>
         </div>
       </div>
@@ -259,7 +261,7 @@ const getScoreBg = (score: string) => {
                 </button>
                 <button
                   @click="handleNext"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
                 >
                   Next
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -351,49 +353,6 @@ const getScoreBg = (score: string) => {
                   <tr v-if="expandedRow === sug.id" class="bg-gray-50">
                     <td colspan="6" class="px-6 py-4">
                       <div class="space-y-4">
-                        <!-- Full Texts Side by Side -->
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                          <!-- Original Full Text -->
-                          <div class="bg-white rounded-lg p-4 border-2 border-gray-200">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="text-gray-500"
-                              >
-                                <circle cx="12" cy="12" r="10"/>
-                              </svg>
-                              Original (Full)
-                            </h4>
-                            <p class="text-sm text-gray-900">{{ sug.original_requirement }}</p>
-                          </div>
-
-                          <!-- Suggested Full Text -->
-                          <div class="bg-green-50 rounded-lg p-4 border-2 border-green-200">
-                            <h4 class="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="text-green-600"
-                              >
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                              </svg>
-                              Suggested (Full)
-                            </h4>
-                            <p class="text-sm text-gray-900">{{ sug.suggested_requirement }}</p>
-                          </div>
-                        </div>
-
                         <!-- Improvements -->
                         <div>
                           <h4 class="text-sm font-semibold text-gray-700 mb-3">Improvement Details:</h4>

@@ -15,6 +15,8 @@ const handleFileSelect = (event: Event) => {
     selectedFile.value = target.files[0]
     emit('fileUploaded', target.files[0])
   }
+  // Reset input so the same file can be re-selected
+  target.value = ''
 }
 
 const handleDrop = (event: DragEvent) => {

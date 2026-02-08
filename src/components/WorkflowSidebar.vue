@@ -62,10 +62,10 @@ const isStepActive = (step: string) => {
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center transition',
-          hasOriginRequirements 
-            ? 'bg-green-600' 
-            : isStepActive('upload') 
-            ? 'bg-blue-600' 
+          hasOriginRequirements
+            ? 'bg-blue-600'
+            : isStepActive('upload')
+            ? 'bg-blue-600'
             : 'bg-gray-700'
         ]">
           <svg
@@ -103,10 +103,10 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasOriginRequirements 
-            ? 'text-green-400' 
-            : isStepActive('upload') 
-            ? 'text-blue-400' 
+          hasOriginRequirements
+            ? 'text-blue-400'
+            : isStepActive('upload')
+            ? 'text-blue-400'
             : 'text-gray-600'
         ]">Upload<br/>requirements</span>
       </button>
@@ -134,15 +134,15 @@ const isStepActive = (step: string) => {
         :disabled="!canNavigateToAnalysis"
         :class="[
           'flex flex-col items-center gap-2 transition',
-          canNavigateToAnalysis 
-            ? 'hover:opacity-80 cursor-pointer' 
+          canNavigateToAnalysis
+            ? 'hover:opacity-80 cursor-pointer'
             : 'cursor-not-allowed opacity-50'
         ]"
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasAnalysis 
-            ? 'bg-green-600' 
+          hasAnalysis
+            ? 'bg-blue-600'
             : isStepActive('analysis')
             ? 'bg-blue-600'
             : 'bg-gray-700'
@@ -181,12 +181,12 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasAnalysis 
-            ? 'text-green-400' 
+          hasAnalysis
+            ? 'text-blue-400'
             : isStepActive('analysis')
             ? 'text-blue-400'
-            : canNavigateToAnalysis 
-            ? 'text-gray-400' 
+            : canNavigateToAnalysis
+            ? 'text-gray-400'
             : 'text-gray-600'
         ]">Evaluate<br/>requirements</span>
       </button>
@@ -214,15 +214,15 @@ const isStepActive = (step: string) => {
         :disabled="!canNavigateToSuggestions"
         :class="[
           'flex flex-col items-center gap-2 transition',
-          canNavigateToSuggestions 
-            ? 'hover:opacity-80 cursor-pointer' 
+          canNavigateToSuggestions
+            ? 'hover:opacity-80 cursor-pointer'
             : 'cursor-not-allowed opacity-50'
         ]"
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasSuggestions 
-            ? 'bg-green-600' 
+          hasSuggestions
+            ? 'bg-blue-600'
             : isStepActive('suggestions')
             ? 'bg-blue-600'
             : 'bg-gray-700'
@@ -261,12 +261,12 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasSuggestions 
-            ? 'text-green-400' 
+          hasSuggestions
+            ? 'text-blue-400'
             : isStepActive('suggestions')
             ? 'text-blue-400'
-            : canNavigateToSuggestions 
-            ? 'text-gray-400' 
+            : canNavigateToSuggestions
+            ? 'text-gray-400'
             : 'text-gray-600'
         ]">Suggest <br/>improvements</span>
       </button>
@@ -302,7 +302,7 @@ const isStepActive = (step: string) => {
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
           hasSelected
-            ? 'bg-green-600'
+            ? 'bg-blue-600'
             : isStepActive('compare')
             ? 'bg-blue-600'
             : 'bg-gray-700'
@@ -343,7 +343,7 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           hasSelected
-            ? 'text-green-400'
+            ? 'text-blue-400'
             : isStepActive('compare')
             ? 'text-blue-400'
             : canNavigateToCompare

@@ -1,10 +1,10 @@
-<!-- ProjectCard -->
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Project } from '@/types/project';
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import EditProjectModal from './EditProjectModal.vue'
+import DeleteConfirmModal from './DeleteConfirmModal.vue'
 
 interface Props {
   project: Project;
@@ -22,6 +22,7 @@ const goToProject = (id : string) => {
 const showMenu = ref(false);
 const isDeleting = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 
 const toggleMenu = () => {
   showMenu.value = !showMenu.value;
@@ -32,17 +33,17 @@ const handleEdit = () => {
   showEditModal.value = true;
 };
 
-const handleDelete = async () => {
-  if (!confirm(`Are you sure you want to delete "${props.project.title}"?`)) {
-    return;
-  }
-
+const handleDelete = () => {
   showMenu.value = false;
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+  showDeleteModal.value = false;
   isDeleting.value = true;
 
   try {
     await store.deleteProject(props.project.id);
-    // Refresh projects list after successful deletion
     await store.fetchProjects();
   } catch (error) {
     console.error('Failed to delete project:', error);
@@ -50,6 +51,10 @@ const handleDelete = async () => {
   } finally {
     isDeleting.value = false;
   }
+};
+
+const cancelDelete = () => {
+  showDeleteModal.value = false;
 };
 
 const closeMenu = () => {
@@ -161,6 +166,14 @@ const handleProjectUpdated = () => {
       :project="project"
       @close="showEditModal = false"
       @updated="handleProjectUpdated"
+    />
+
+    <!-- Delete Confirm Modal -->
+    <DeleteConfirmModal
+      v-if="showDeleteModal"
+      :project-title="project.title"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
     />
   </div>
 </template>
