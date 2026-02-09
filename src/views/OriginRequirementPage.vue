@@ -1,6 +1,5 @@
-<!-- Origin Requirements Page - Fixed with Auto-navigation -->
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import UploadButton from '@/components/UploadButton.vue'
@@ -52,6 +51,11 @@ const sortedRequirements = computed(() => {
   })
 })
 
+// Check if module data exists in requirements
+const hasModuleData = computed(() => {
+  return requirements.value.some(req => req.module && req.module.trim() !== '')
+})
+
 // Search and pagination
 const filteredRequirements = computed(() => {
   let filtered = [...sortedRequirements.value]
@@ -60,7 +64,7 @@ const filteredRequirements = computed(() => {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(req =>
       req.req_id.toLowerCase().includes(query) ||
-      req.module.toLowerCase().includes(query) ||
+      (req.module && req.module.toLowerCase().includes(query)) ||
       req.requirement.toLowerCase().includes(query)
     )
   }
@@ -109,37 +113,54 @@ const readFileColumns = async (file: File): Promise<string[]> => {
 }
 
 const handleFileUploaded = async (file: File) => {
+  // Reset state ก่อนเสมอเพื่อให้แน่ใจว่า modal จะถูก re-render
+  showMappingModal.value = false
+  uploadedFile.value = null
+  fileColumns.value = []
+  
+  // รอให้ Vue update state
+  await nextTick()
+  
   uploadedFile.value = file
   
   try {
     const columns = await readFileColumns(file)
     fileColumns.value = columns
+    
+    // รอให้ Vue update DOM ก่อนแสดง modal
+    await nextTick()
     showMappingModal.value = true
   } catch (error: any) {
     console.error('Error reading file:', error)
     alert('Error reading file: ' + error.message)
+    // Reset on error
+    uploadedFile.value = null
+    fileColumns.value = []
   }
 }
 
 const handleMappingConfirm = async (mapping: any) => {
   if (!uploadedFile.value) return
-  
+
   try {
     // Convert mapping format to match API
+    // Empty string means: reqId = auto-generate, module = no module
     const apiMapping: ColumnMapping = {
-      req_id: mapping.reqId,
-      module: mapping.module,
+      req_id: mapping.reqId || '',
+      module: mapping.module || '',
       requirement: mapping.requirement
     }
-    
+
     await store.uploadRequirements(
       projectId.value,
       uploadedFile.value,
       apiMapping
     )
-    
+
+    // Reset state after successful upload
     showMappingModal.value = false
     uploadedFile.value = null
+    fileColumns.value = []
     // Stay on same page after upload - user can click Next to proceed
 
   } catch (error: any) {
@@ -151,6 +172,7 @@ const handleMappingConfirm = async (mapping: any) => {
 const handleMappingClose = () => {
   showMappingModal.value = false
   uploadedFile.value = null
+  fileColumns.value = []
 }
 
 const handleBack = () => {
@@ -178,8 +200,9 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
     <!-- Header -->
     <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button
-        @click="handleBack"
+        @click="router.push('/projects')"
         class="p-2 hover:bg-gray-700 rounded-lg transition"
+        title="Back to Projects"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -193,7 +216,8 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
           stroke-linejoin="round"
           class="text-white"
         >
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </button>
       
@@ -269,7 +293,7 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
                 <!-- Next Button -->
                 <button
                   @click="handleNext"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
                 >
                   Next
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -281,12 +305,12 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-y-auto min-h-0">
-            <table class="w-full table-fixed">
+          <div class="flex-1 overflow-auto min-h-0">
+            <table class="w-full table-fixed h-full">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
-                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 250px;">Module</th>
+                  <th v-if="hasModuleData" class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 250px;">Module</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Requirement</th>
                 </tr>
               </thead>
@@ -297,8 +321,18 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
                   class="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.req_id">{{ req.req_id }}</td>
-                  <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                  <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
                   <td class="px-4 py-4 text-sm text-gray-900 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
+                </tr>
+                <!-- Fill remaining rows to reach itemsPerPage -->
+                <tr
+                  v-for="i in (itemsPerPage - paginatedRequirements.length)"
+                  :key="`empty-${i}`"
+                  class="border-b border-gray-200"
+                >
+                  <td class="px-4 py-4 text-sm text-gray-900">&nbsp;</td>
+                  <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900">&nbsp;</td>
+                  <td class="px-4 py-4 text-sm text-gray-900">&nbsp;</td>
                 </tr>
               </tbody>
             </table>
@@ -333,16 +367,5 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
       @confirm="handleMappingConfirm"
       @close="handleMappingClose"
     />
-
-    <!-- Loading Overlay -->
-    <div 
-      v-if="store.isLoading"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div class="bg-gray-800 rounded-lg p-6 flex items-center gap-4">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span class="text-white">Processing...</span>
-      </div>
-    </div>
   </div>
 </template>

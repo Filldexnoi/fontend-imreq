@@ -26,7 +26,7 @@ const router = useRouter()
 const canNavigateToAnalysis = computed(() => props.hasOriginRequirements)
 const canNavigateToSuggestions = computed(() => props.hasAnalysis)
 const canNavigateToCompare = computed(() => props.hasSuggestions)
-const canNavigateToExport = computed(() => props.hasSelected) // Export accessible after compare & selection
+const canNavigateToExport = computed(() => props.hasSuggestions || props.hasSelected)
 
 const navigateTo = (step: string) => {
   if (step === 'origin' && props.projectId) {
@@ -62,10 +62,10 @@ const isStepActive = (step: string) => {
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center transition',
-          hasOriginRequirements 
-            ? 'bg-green-600' 
-            : isStepActive('upload') 
-            ? 'bg-blue-600' 
+          hasOriginRequirements
+            ? 'bg-blue-500'
+            : isStepActive('upload')
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -103,10 +103,10 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasOriginRequirements 
-            ? 'text-green-400' 
-            : isStepActive('upload') 
-            ? 'text-blue-400' 
+          hasOriginRequirements
+            ? 'text-white'
+            : isStepActive('upload')
+            ? 'text-white'
             : 'text-gray-600'
         ]">Upload<br/>requirements</span>
       </button>
@@ -134,17 +134,17 @@ const isStepActive = (step: string) => {
         :disabled="!canNavigateToAnalysis"
         :class="[
           'flex flex-col items-center gap-2 transition',
-          canNavigateToAnalysis 
-            ? 'hover:opacity-80 cursor-pointer' 
+          canNavigateToAnalysis
+            ? 'hover:opacity-80 cursor-pointer'
             : 'cursor-not-allowed opacity-50'
         ]"
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasAnalysis 
-            ? 'bg-green-600' 
+          hasAnalysis
+            ? 'bg-blue-500'
             : isStepActive('analysis')
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -181,12 +181,12 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasAnalysis 
-            ? 'text-green-400' 
+          hasAnalysis
+            ? 'text-white'
             : isStepActive('analysis')
-            ? 'text-blue-400'
-            : canNavigateToAnalysis 
-            ? 'text-gray-400' 
+            ? 'text-white'
+            : canNavigateToAnalysis
+            ? 'text-gray-400'
             : 'text-gray-600'
         ]">Evaluate<br/>requirements</span>
       </button>
@@ -214,17 +214,17 @@ const isStepActive = (step: string) => {
         :disabled="!canNavigateToSuggestions"
         :class="[
           'flex flex-col items-center gap-2 transition',
-          canNavigateToSuggestions 
-            ? 'hover:opacity-80 cursor-pointer' 
+          canNavigateToSuggestions
+            ? 'hover:opacity-80 cursor-pointer'
             : 'cursor-not-allowed opacity-50'
         ]"
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasSuggestions 
-            ? 'bg-green-600' 
+          hasSuggestions
+            ? 'bg-blue-500'
             : isStepActive('suggestions')
-            ? 'bg-blue-600'
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
@@ -261,12 +261,12 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasSuggestions 
-            ? 'text-green-400' 
+          hasSuggestions
+            ? 'text-white'
             : isStepActive('suggestions')
-            ? 'text-blue-400'
-            : canNavigateToSuggestions 
-            ? 'text-gray-400' 
+            ? 'text-white'
+            : canNavigateToSuggestions
+            ? 'text-gray-400'
             : 'text-gray-600'
         ]">Suggest <br/>improvements</span>
       </button>
@@ -301,29 +301,11 @@ const isStepActive = (step: string) => {
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          hasSelected
-            ? 'bg-green-600'
-            : isStepActive('compare')
-            ? 'bg-blue-600'
+          isStepActive('compare')
+            ? 'bg-blue-500'
             : 'bg-gray-700'
         ]">
           <svg
-            v-if="hasSelected"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-white"
-          >
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <svg
-            v-else
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
@@ -342,10 +324,8 @@ const isStepActive = (step: string) => {
         </div>
         <span :class="[
           'text-xs text-center',
-          hasSelected
-            ? 'text-green-400'
-            : isStepActive('compare')
-            ? 'text-blue-400'
+          isStepActive('compare')
+            ? 'text-white'
             : canNavigateToCompare
             ? 'text-gray-400'
             : 'text-gray-600'
@@ -406,7 +386,7 @@ const isStepActive = (step: string) => {
         <span :class="[
           'text-xs text-center',
           isStepActive('export')
-            ? 'text-blue-400'
+            ? 'text-white'
             : canNavigateToExport
             ? 'text-gray-400'
             : 'text-gray-600'

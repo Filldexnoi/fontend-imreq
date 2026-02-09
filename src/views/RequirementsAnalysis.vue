@@ -162,8 +162,9 @@ const toggleRow = (reqId: string) => {
     <!-- Header -->
     <header class="bg-gray-800 px-6 py-4 flex items-center gap-4 border-b border-gray-700 flex-shrink-0">
       <button
-        @click="handlePrevious"
+        @click="router.push('/projects')"
         class="p-2 hover:bg-gray-700 rounded-lg transition"
+        title="Back to Projects"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -177,10 +178,11 @@ const toggleRow = (reqId: string) => {
           stroke-linejoin="round"
           class="text-white"
         >
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </button>
-
+      
       <div class="flex items-center gap-3 flex-1">
         <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
           <span class="text-white text-sm font-bold">IR</span>
@@ -188,7 +190,7 @@ const toggleRow = (reqId: string) => {
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
             <h1 class="text-xl font-semibold text-white">
-              {{ project?.title || 'Analysis Results' }}
+              {{ project?.title || 'Requirement List' }}
             </h1>
             <span class="text-gray-400 text-sm">•</span>
             <span class="text-blue-400 text-sm font-medium">Step 2: Evaluate requirements</span>
@@ -302,7 +304,7 @@ const toggleRow = (reqId: string) => {
                 </button>
                 <button
                   @click="handleNext"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
                 >
                   Next
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -370,54 +372,37 @@ const toggleRow = (reqId: string) => {
 
                   <!-- Expanded Row -->
                   <tr v-if="expandedRow === req.id" class="bg-gray-50">
-                    <td colspan="5" class="px-6 py-6">
-                      <div class="flex justify-end">
-                        <!-- Criteria Container - Right aligned, only 2 columns -->
-                        <div class="grid grid-cols-2 gap-6" style="width: 66.666667%;">
-                          <!-- Passed Criteria (Left) -->
-                          <div>
-                            <h4 class="text-sm font-semibold text-green-700 mb-3">
-                              Passed Criteria ({{ req.characteristics.length }})
-                            </h4>
-                            <div class="space-y-2">
-                              <div
-                                v-for="char in req.characteristics"
-                                :key="char"
-                                class="flex items-center gap-2 text-sm text-gray-700"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  class="text-green-600 flex-shrink-0"
-                                >
-                                  <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                                <span>{{ char }}</span>
-                              </div>
+                    <td colspan="5" class="px-6 py-4">
+                      <div class="space-y-4">
+                        <!-- Passed Criteria -->
+                        <div>
+                          <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                            Passed Criteria ({{ req.characteristics.length }}):
+                          </h4>
+                          <div class="grid grid-cols-2 gap-3">
+                            <div
+                              v-for="char in req.characteristics"
+                              :key="char"
+                              class="bg-green-50 rounded-lg p-3 border border-green-200"
+                            >
+                              <p class="text-sm text-green-700">{{ char }}</p>
                             </div>
                           </div>
+                        </div>
 
-                          <!-- Failed Criteria (Right) -->
-                          <div>
-                            <h4 class="text-sm font-semibold text-red-700 mb-3">
-                              Failed Criteria ({{ Object.keys(req.evaluation).length }})
-                            </h4>
-                            <div class="space-y-3">
-                              <div
-                                v-for="(reason, criterion) in req.evaluation"
-                                :key="criterion"
-                                class="bg-red-50 rounded-lg p-3"
-                              >
-                                <p class="text-sm font-semibold text-red-700 mb-1">{{ criterion }}</p>
-                                <p class="text-sm text-gray-700">{{ reason }}</p>
-                              </div>
+                        <!-- Failed Criteria -->
+                        <div>
+                          <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                            Failed Criteria ({{ Object.keys(req.evaluation).length }}):
+                          </h4>
+                          <div class="grid grid-cols-2 gap-3">
+                            <div
+                              v-for="(reason, criterion) in req.evaluation"
+                              :key="criterion"
+                              class="bg-red-50 rounded-lg p-3 border border-red-200"
+                            >
+                              <p class="text-sm font-semibold text-red-700 mb-1">{{ criterion }}</p>
+                              <p class="text-sm text-gray-700">{{ reason }}</p>
                             </div>
                           </div>
                         </div>
