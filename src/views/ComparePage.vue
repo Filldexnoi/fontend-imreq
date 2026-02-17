@@ -27,6 +27,7 @@ const hasOriginRequirements = computed(() => store.hasRequirements)
 const hasAnalysis = computed(() => store.hasAnalysis)
 const hasSuggestions = computed(() => store.hasSuggestions)
 const hasSelected = computed(() => store.hasSelected)
+const hasModuleData = computed(() => store.hasModuleData)
 
 // Load data on mount
 onMounted(async () => {
@@ -65,7 +66,7 @@ const filteredSuggestions = computed(() => {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(sug =>
       sug.req_id.toLowerCase().includes(query) ||
-      sug.module.toLowerCase().includes(query) ||
+      (sug.module && sug.module.toLowerCase().includes(query)) ||
       sug.original_requirement.toLowerCase().includes(query) ||
       sug.suggested_requirement.toLowerCase().includes(query)
     )
@@ -312,12 +313,12 @@ const getScoreBg = (score: string | undefined) => {
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-y-auto min-h-0">
-            <table class="w-full table-fixed">
+          <div class="flex-1 overflow-auto min-h-0">
+            <table class="w-full table-fixed h-full">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 100px;">ReqID</th>
-                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 150px;">Module</th>
+                  <th v-if="hasModuleData" class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 150px;">Module</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Original Requirement (Click to select)</th>
                   <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 70px;">Score</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Suggested Requirement (Click to select)</th>
@@ -333,7 +334,7 @@ const getScoreBg = (score: string | undefined) => {
                   <td class="px-4 py-4 text-sm text-gray-900 font-medium truncate" :title="sug.req_id">{{ sug.req_id }}</td>
 
                   <!-- Module -->
-                  <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
+                  <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
 
                   <!-- Original Requirement - Clickable -->
                   <td
@@ -404,6 +405,18 @@ const getScoreBg = (score: string | undefined) => {
                     </div>
                   </td>
                 </tr>
+                <!-- Fill remaining rows to reach itemsPerPage -->
+                <tr
+                  v-for="i in (itemsPerPage - paginatedSuggestions.length)"
+                  :key="`empty-${i}`"
+                  class="border-b border-gray-200"
+                >
+                  <td class="px-4 py-4">&nbsp;</td>
+                  <td v-if="hasModuleData" class="px-4 py-4">&nbsp;</td>
+                  <td class="px-4 py-4">&nbsp;</td>
+                  <td class="px-4 py-4">&nbsp;</td>
+                  <td class="px-4 py-4">&nbsp;</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -423,7 +436,6 @@ const getScoreBg = (score: string | undefined) => {
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">Total {{ filteredSuggestions.length }} items</span>
           </div>
         </div>
       </main>

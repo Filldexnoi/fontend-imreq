@@ -23,6 +23,7 @@ const hasOriginRequirements = computed(() => store.hasRequirements)
 const hasAnalysis = computed(() => store.hasAnalysis)
 const hasSuggestions = computed(() => store.hasSuggestions)
 const hasSelected = computed(() => store.hasSelected)
+const hasModuleData = computed(() => store.hasModuleData)
 
 // Load data on mount
 onMounted(async () => {
@@ -49,7 +50,7 @@ const filteredRequirements = computed(() => {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(req =>
       req.req_id.toLowerCase().includes(query) ||
-      req.module.toLowerCase().includes(query) ||
+      (req.module && req.module.toLowerCase().includes(query)) ||
       req.requirement.toLowerCase().includes(query)
     )
   }
@@ -237,13 +238,13 @@ const goToPage = (page: number) => {
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-y-auto min-h-0">
-            <table class="w-full table-fixed">
+          <div class="flex-1 overflow-auto min-h-0">
+            <table class="w-full table-fixed h-full">
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white">Requirement</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
+                  <th v-if="hasModuleData" class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
+                  <th class="px-4 py-4 text-left text-sm font-semibold text-white">Requirement</th>
                 </tr>
               </thead>
               <tbody class="bg-white">
@@ -252,9 +253,19 @@ const goToPage = (page: number) => {
                   :key="req.id"
                   class="border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td class="px-6 py-4 text-sm text-gray-900 font-medium truncate" :title="req.req_id">{{ req.req_id }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-900 font-medium truncate" :title="req.req_id">{{ req.req_id }}</td>
+                  <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-700 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
+                </tr>
+                <!-- Fill remaining rows to reach itemsPerPage -->
+                <tr
+                  v-for="i in (itemsPerPage - paginatedRequirements.length)"
+                  :key="`empty-${i}`"
+                  class="border-b border-gray-200"
+                >
+                  <td class="px-4 py-4">&nbsp;</td>
+                  <td v-if="hasModuleData" class="px-4 py-4">&nbsp;</td>
+                  <td class="px-4 py-4">&nbsp;</td>
                 </tr>
               </tbody>
             </table>
@@ -275,7 +286,6 @@ const goToPage = (page: number) => {
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">Total {{ filteredRequirements.length }} requirements</span>
           </div>
         </div>
       </main>
