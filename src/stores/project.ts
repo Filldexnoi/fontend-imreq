@@ -41,6 +41,7 @@ export const useProjectStore = defineStore('project', () => {
   const hasAnalysis = computed(() => analyzedRequirements.value.length > 0)
   const hasSuggestions = computed(() => suggestedRequirements.value.length > 0)
   const hasSelected = computed(() => selectedRequirements.value.length > 0)
+  const hasModuleData = computed(() => originRequirements.value.some(req => req.module && req.module.trim() !== ''))
   const isLoading = computed(() => loadingState.value === 'loading')
 
   // ✅ NEW: Get current project stage
@@ -536,6 +537,7 @@ export const useProjectStore = defineStore('project', () => {
     hasAnalysis,
     hasSuggestions,
     hasSelected,
+    hasModuleData,
     isLoading,
     getCurrentProjectStage,
     

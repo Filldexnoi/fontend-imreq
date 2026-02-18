@@ -49,7 +49,7 @@ const isStepActive = (step: string) => {
 </script>
 
 <template>
-  <aside class="w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-6 gap-6 flex-shrink-0">
+  <aside class="w-28 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-6 gap-6 flex-shrink-0">
     <!-- Workflow Steps -->
     <div class="flex flex-col items-center gap-4">
       <!-- Step 1: Upload -->
@@ -102,13 +102,13 @@ const isStepActive = (step: string) => {
           </svg>
         </div>
         <span :class="[
-          'text-xs text-center',
+          'text-xs text-center font-bold',
           hasOriginRequirements
             ? 'text-white'
             : isStepActive('upload')
             ? 'text-white'
             : 'text-gray-600'
-        ]">Upload<br/>requirements</span>
+        ]">UPLOAD<br/>REQUIREMENTS</span>
       </button>
 
       <!-- Arrow -->
@@ -180,7 +180,7 @@ const isStepActive = (step: string) => {
           </svg>
         </div>
         <span :class="[
-          'text-xs text-center',
+          'text-xs text-center font-bold',
           hasAnalysis
             ? 'text-white'
             : isStepActive('analysis')
@@ -188,7 +188,7 @@ const isStepActive = (step: string) => {
             : canNavigateToAnalysis
             ? 'text-gray-400'
             : 'text-gray-600'
-        ]">Evaluate<br/>requirements</span>
+        ]">EVALUATE<br/>REQUIREMENTS</span>
       </button>
 
       <!-- Arrow -->
@@ -260,7 +260,7 @@ const isStepActive = (step: string) => {
           </svg>
         </div>
         <span :class="[
-          'text-xs text-center',
+          'text-xs text-center font-bold',
           hasSuggestions
             ? 'text-white'
             : isStepActive('suggestions')
@@ -268,7 +268,7 @@ const isStepActive = (step: string) => {
             : canNavigateToSuggestions
             ? 'text-gray-400'
             : 'text-gray-600'
-        ]">Suggest <br/>improvements</span>
+        ]">SUGGEST<br/>IMPROVEMENTS</span>
       </button>
 
       <!-- Arrow -->
@@ -323,13 +323,13 @@ const isStepActive = (step: string) => {
           </svg>
         </div>
         <span :class="[
-          'text-xs text-center',
+          'text-xs text-center font-bold',
           isStepActive('compare')
             ? 'text-white'
             : canNavigateToCompare
             ? 'text-gray-400'
             : 'text-gray-600'
-        ]">Compare<br/>version</span>
+        ]">COMPARE<br/>VERSION</span>
       </button>
 
       <!-- Arrow -->
@@ -384,13 +384,13 @@ const isStepActive = (step: string) => {
           </svg>
         </div>
         <span :class="[
-          'text-xs text-center',
+          'text-xs text-center font-bold',
           isStepActive('export')
             ? 'text-white'
             : canNavigateToExport
             ? 'text-gray-400'
             : 'text-gray-600'
-        ]">Download<br/>report</span>
+        ]">DOWNLOAD<br/>REPORT</span>
       </button>
     </div>
   </aside>

@@ -52,9 +52,7 @@ const sortedRequirements = computed(() => {
 })
 
 // Check if module data exists in requirements
-const hasModuleData = computed(() => {
-  return requirements.value.some(req => req.module && req.module.trim() !== '')
-})
+const hasModuleData = computed(() => store.hasModuleData)
 
 // Search and pagination
 const filteredRequirements = computed(() => {
@@ -353,7 +351,6 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
             >
               {{ page }}
             </button>
-            <span class="text-gray-400 text-sm ml-2">Total {{ filteredRequirements.length }} items</span>
           </div>
         </div>
       </main>
