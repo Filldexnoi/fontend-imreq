@@ -63,17 +63,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
-  // Compare Page
-  {
-    path: '/projects/:id/compare',
-    name: 'compare',
-    component: () => import('@/views/ComparePage.vue'),
-    meta: {
-      title: 'Compare Requirements - ImReq',
-      requiresAuth: true
-    }
-  },
-
   // Suggestion Page
   {
     path: '/projects/:id/suggestions',
@@ -81,6 +70,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/SuggestionPage.vue'),
     meta: {
       title: 'Suggestions - ImReq',
+      requiresAuth: true
+    }
+  },
+
+  // Compare Page
+  {
+    path: '/projects/:id/compare',
+    name: 'compare',
+    component: () => import('@/views/ComparePage.vue'),
+    meta: {
+      title: 'Compare Requirements - ImReq',
       requiresAuth: true
     }
   },

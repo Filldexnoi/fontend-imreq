@@ -49,16 +49,24 @@ export interface AnalyzedRequirement {
 // ============================================
 // Suggested Requirement Types
 // ============================================
+export interface SplitRequirement {
+  req_id: string
+  requirement: string
+  explanation?: string
+}
+
 export interface SuggestedRequirement {
   id: string
   req_id: string
   project_id: string
   module: string
   original_requirement: string
-  suggested_requirement: string
+  suggested_requirement: string | null  // null if split
   original_score: string
   suggested_score?: string  // Calculated or provided by backend
-  improvements: Record<string, string>  // What was fixed per criterion
+  improvements: Record<string, string> | null  // What was fixed per criterion
+  is_split?: boolean  // True if requirement was split
+  split_requirements?: SplitRequirement[]  // Array of split requirements
   created_at: string
   updated_at?: string
 }

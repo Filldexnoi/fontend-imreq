@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 const projectName = ref('');
 const projectDescription = ref('');
-const selectedTemplate = ref('Others');
+const selectedTemplate = ref('ISO29148');
 const referenceFiles = ref<File[]>([]);
 const existingFiles = ref<any[]>([]);
 const errorMessage = ref('');
@@ -30,7 +30,7 @@ const isUpdating = ref(false);
 const originalValues = ref({
   title: '',
   description: '',
-  template: 'Others',
+  template: 'ISO29148',
   filesCount: 0
 });
 
@@ -41,14 +41,9 @@ const templates = [
     description: 'Easy Approach to Requirements Syntax - A pattern-based template using WHEN, WHILE, WHERE, IF, THEN clauses for clear and unambiguous requirements.'
   },
   {
-    value: 'IEEE830',
-    label: 'IEEE 830',
-    description: 'Traditional IEEE format with numbered requirements including functional requirements, non-functional requirements, and system attributes.'
-  },
-  {
-    value: 'Others',
-    label: 'Others',
-    description: 'Custom format without specific template constraints. Use this for free-form requirements or when using a different standard.'
+    value: 'ISO29148',
+    label: 'ISO 29148',
+    description: 'International standard format with requirements structured as: [Condition] [Subject] [Action] [Object] [Constraint], using "shall" for mandatory requirements.'
   }
 ];
 
@@ -56,7 +51,7 @@ const templates = [
 onMounted(() => {
   projectName.value = props.project.title;
   projectDescription.value = props.project.description;
-  selectedTemplate.value = props.project.requirement_template || 'Others';
+  selectedTemplate.value = props.project.requirement_template || 'ISO29148';
   
   // Load existing reference files
   if (props.project.reference_files && Array.isArray(props.project.reference_files)) {
@@ -70,7 +65,7 @@ onMounted(() => {
   originalValues.value = {
     title: props.project.title,
     description: props.project.description,
-    template: props.project.requirement_template || 'Others',
+    template: props.project.requirement_template || 'ISO29148',
     filesCount: props.project.reference_files?.length || 0
   }
 });

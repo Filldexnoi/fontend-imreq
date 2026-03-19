@@ -193,7 +193,7 @@ export const projectAPI = {
     const formData = new FormData()
     formData.append('title', project.title)
     formData.append('description', project.description)
-    formData.append('requirement_template', project.requirement_template || 'Others')
+    formData.append('requirement_template', project.requirement_template || 'ISO29148')
 
     if (project.files && project.files.length > 0) {
       project.files.forEach(file => {
@@ -318,6 +318,25 @@ export const suggestionAPI = {
       suggestions: suggestions
     }
   },
+
+  // Get similarity summary (Jaccard + Doc2Vec) for a project
+  getSimilarity: async (projectId: string): Promise<{
+    summary: {
+      total: number
+      jaccard: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
+      doc2vec: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
+      interpretation_counts: Record<string, number>
+    }
+    pairs: Array<{
+      req_id: string
+      original_score: string
+      jaccard: number
+      doc2vec_sim: number
+      interpretation: string
+    }>
+  }> => {
+    return fetchAPI(`/projects/${projectId}/suggestedrequirements/similarity`)
+  },
 }
 
 // ============================================
@@ -343,6 +362,18 @@ export const selectedRequirementAPI = {
   // Get selected requirements
   getAll: async (projectId: string): Promise<SelectedRequirement[]> => {
     return fetchAPI(`/projects/${projectId}/selectedrequirements`)
+  },
+
+  // Upsert a single requirement selection (per-item save)
+  upsertSingle: async (
+    projectId: string,
+    deleteReqIds: string[],
+    insert: Array<{ req_id: string; module: string; requirement: string }>
+  ): Promise<{ deleted: number; inserted: number }> => {
+    return fetchAPI(`/projects/${projectId}/selectedrequirements`, {
+      method: 'PATCH',
+      body: JSON.stringify({ delete_req_ids: deleteReqIds, insert }),
+    })
   },
 
   // Delete all selected requirements (optional - for reset)

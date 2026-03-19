@@ -27,6 +27,7 @@ const hasOriginRequirements = computed(() => store.hasRequirements)
 const hasAnalysis = computed(() => store.hasAnalysis)
 const hasSuggestions = computed(() => store.hasSuggestions)
 const hasSelected = computed(() => store.hasSelected)
+const hasModuleData = computed(() => suggestions.value.some(s => s.module && s.module.trim() !== ''))
 
 // Load data on mount
 onMounted(async () => {
@@ -38,10 +39,13 @@ onMounted(async () => {
       if (foundProject) {
         await store.selectProject(foundProject)
         await store.fetchSuggestions(projectId.value)
+        await store.fetchSelectedRequirements(projectId.value)
 
-        // Initialize selections with 'suggested' as default
+        // Initialize selections from saved data, fallback to 'suggested'
+        const savedMap = new Map(store.selectedRequirements.map((r: any) => [r.req_id, r.requirement]))
         suggestions.value.forEach(sug => {
-          selections.value.set(sug.req_id, 'suggested')
+          const saved = savedMap.get(sug.req_id)
+          selections.value.set(sug.req_id, saved !== undefined && saved === sug.original_requirement ? 'original' : 'suggested')
         })
       }
     } catch (error) {
@@ -111,12 +115,37 @@ const handleConfirm = async () => {
   isSaving.value = true
 
   try {
-    const selectedData = suggestions.value.map(sug => {
+    const selectedData: Array<{ req_id: string; module: string; requirement: string }> = []
+
+    suggestions.value.forEach(sug => {
       const choice = selections.value.get(sug.req_id) || 'suggested'
-      return {
-        req_id: sug.req_id,
-        module: sug.module,
-        requirement: choice === 'suggested' ? sug.suggested_requirement : sug.original_requirement
+
+      if (choice === 'original') {
+        // Use original requirement
+        selectedData.push({
+          req_id: sug.req_id,
+          module: sug.module,
+          requirement: sug.original_requirement
+        })
+      } else {
+        // Use suggested requirement
+        if (sug.is_split && sug.split_requirements) {
+          // If split, add all split requirements
+          sug.split_requirements.forEach(split => {
+            selectedData.push({
+              req_id: split.req_id,
+              module: sug.module,
+              requirement: split.requirement
+            })
+          })
+        } else {
+          // Normal suggestion
+          selectedData.push({
+            req_id: sug.req_id,
+            module: sug.module,
+            requirement: sug.suggested_requirement || sug.original_requirement
+          })
+        }
       }
     })
 
@@ -317,7 +346,7 @@ const getScoreBg = (score: string | undefined) => {
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 100px;">ReqID</th>
-                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 150px;">Module</th>
+                  <th v-if="hasModuleData" class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 150px;">Module</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Original Requirement (Click to select)</th>
                   <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 70px;">Score</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Suggested Requirement (Click to select)</th>
@@ -333,7 +362,7 @@ const getScoreBg = (score: string | undefined) => {
                   <td class="px-4 py-4 text-sm text-gray-900 font-medium truncate" :title="sug.req_id">{{ sug.req_id }}</td>
 
                   <!-- Module -->
-                  <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
+                  <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900 truncate" :title="sug.module">{{ sug.module }}</td>
 
                   <!-- Original Requirement - Clickable -->
                   <td
@@ -341,8 +370,8 @@ const getScoreBg = (score: string | undefined) => {
                     class="px-4 py-4 text-sm text-gray-700 cursor-pointer transition-all"
                     :class="[
                       selections.get(sug.req_id) === 'original'
-                        ? 'bg-yellow-100 border-l-4 border-yellow-500'
-                        : 'hover:bg-yellow-50'
+                        ? 'bg-blue-100 border-l-4 border-blue-500' 
+                        : 'hover:bg-blue-50'
                     ]"
                   >
                     <div class="flex items-start gap-2">
@@ -381,10 +410,10 @@ const getScoreBg = (score: string | undefined) => {
                     class="px-4 py-4 text-sm text-gray-700 cursor-pointer transition-all"
                     :class="[
                       selections.get(sug.req_id) === 'suggested'
-                        ? 'bg-green-100 border-l-4 border-green-500'
-                        : 'hover:bg-green-50'
+                        ? 'bg-blue-100 border-l-4 border-blue-500' 
+                        : 'hover:bg-blue-50'
                     ]"
-                  >
+                    >
                     <div class="flex items-start gap-2">
                       <input
                         type="radio"
@@ -392,14 +421,51 @@ const getScoreBg = (score: string | undefined) => {
                         :checked="selections.get(sug.req_id) === 'suggested'"
                         @click.stop
                         @change="selectRequirement(sug.req_id, 'suggested')"
-                        class="w-4 h-4 text-green-600 cursor-pointer mt-0.5 flex-shrink-0"
+                        :class="[
+                          'w-4 h-4 cursor-pointer mt-0.5 flex-shrink-0',
+                          sug.is_split ? 'text-purple-600' : 'text-green-600'
+                        ]"
                       />
-                      <div class="whitespace-pre-wrap break-words">
+
+                      <!-- Normal Suggestion with Diff -->
+                      <div v-if="!sug.is_split" class="whitespace-pre-wrap break-words flex-1">
                         <TextDiff
                           :original="sug.original_requirement"
-                          :suggested="sug.suggested_requirement"
+                          :suggested="sug.suggested_requirement || ''"
                           :show-diff="true"
                         />
+                      </div>
+
+                      <!-- Split Requirements -->
+                      <div v-else class="flex-1 space-y-2">
+                        <div class="flex items-center gap-2 mb-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="text-purple-600"
+                          >
+                            <path d="M16 3h5v5M4 20L20 4M4 20v-5M4 20h5"/>
+                          </svg>
+                          <span class="text-xs font-semibold text-purple-600 uppercase">
+                            Split into {{ sug.split_requirements?.length || 0 }} requirements
+                          </span>
+                        </div>
+                        <div
+                          v-for="(split, idx) in sug.split_requirements"
+                          :key="`${sug.id}-split-${idx}`"
+                          class="bg-white border border-purple-300 rounded-lg p-3"
+                        >
+                          <div class="flex items-start gap-2 mb-1">
+                            <span class="text-xs font-bold text-purple-700 min-w-[60px]">{{ split.req_id }}</span>
+                          </div>
+                          <p class="text-sm text-gray-800 whitespace-pre-wrap break-words">{{ split.requirement }}</p>
+                          <p v-if="split.explanation" class="text-xs text-gray-600 mt-1 italic">{{ split.explanation }}</p>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -441,3 +507,12 @@ const getScoreBg = (score: string | undefined) => {
     </div>
   </div>
 </template>
+
+<style>
+/* ต้องประกาศสไตล์นี้ในระดับ global หรือไม่ใช้ scoped */
+.my-added-word-highlight {
+  background-color: #e6ffed; /* พื้นหลังสีเขียวอ่อน */
+  border-bottom: 2px solid #2da44e; /* เส้นใต้สีเขียว */
+  font-weight: bold;
+}
+</style>

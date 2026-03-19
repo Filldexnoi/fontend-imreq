@@ -68,12 +68,8 @@ const totalPages = computed(() =>
 )
 
 // Actions
-const handleBack = () => {
-  router.push(`/projects/${projectId.value}/compare`)
-}
-
 const handlePrevious = () => {
-  router.push(`/projects/${projectId.value}/compare`)
+  router.push(`/projects/${projectId.value}/suggestions`)
 }
 
 const handleDownload = async () => {
@@ -88,6 +84,8 @@ const handleDownload = async () => {
     isDownloading.value = false
   }
 }
+
+const hasModuleData = computed(() => selectedRequirements.value.some(r => r.module && r.module.trim() !== ''))
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -164,7 +162,7 @@ const goToPage = (page: number) => {
             <h3 class="text-white text-lg font-semibold mb-2">No selected requirements</h3>
             <p class="text-gray-400 text-sm mb-6">Please complete the comparison step first</p>
             <button
-              @click="router.push(`/projects/${projectId}/compare`)"
+              @click="router.push(`/projects/${projectId}/suggestions`)"
               class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition"
             >
               Go to Compare
@@ -242,7 +240,7 @@ const goToPage = (page: number) => {
               <thead class="bg-gray-800 sticky top-0 z-10">
                 <tr class="border-b border-gray-700">
                   <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
+                  <th v-if="hasModuleData" class="px-6 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
                   <th class="px-6 py-4 text-left text-sm font-semibold text-white">Requirement</th>
                 </tr>
               </thead>
@@ -253,7 +251,7 @@ const goToPage = (page: number) => {
                   class="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td class="px-6 py-4 text-sm text-gray-900 font-medium truncate" :title="req.req_id">{{ req.req_id }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                  <td v-if="hasModuleData" class="px-6 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
                   <td class="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
                 </tr>
               </tbody>

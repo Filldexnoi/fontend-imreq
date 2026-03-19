@@ -13,7 +13,7 @@ const emit = defineEmits<{
 
 const projectName = ref('');
 const projectDescription = ref('');
-const selectedTemplate = ref('Others');
+const selectedTemplate = ref('ISO29148');
 const referenceFiles = ref<File[]>([]);
 const errorMessage = ref('');
 const showTemplateInfo = ref(false);
@@ -25,14 +25,9 @@ const templates = [
     description: 'Easy Approach to Requirements Syntax - A pattern-based template using WHEN, WHILE, WHERE, IF, THEN clauses for clear and unambiguous requirements.'
   },
   {
-    value: 'IEEE830',
-    label: 'IEEE 830',
-    description: 'Traditional IEEE format with numbered requirements including functional requirements, non-functional requirements, and system attributes.'
-  },
-  {
-    value: 'Others',
-    label: 'Others',
-    description: 'Custom format without specific template constraints. Use this for free-form requirements or when using a different standard.'
+    value: 'ISO29148',
+    label: 'ISO 29148',
+    description: 'International standard format with requirements structured as: [Condition] [Subject] [Action] [Object] [Constraint], using "shall" for mandatory requirements.'
   }
 ];
 

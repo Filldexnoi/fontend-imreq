@@ -4,6 +4,31 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import WorkflowSidebar from '@/components/WorkflowSidebar.vue'
+import RuleIcon from '@/components/RuleIcon.vue'
+import CriteriaReference from '@/components/CriteriaReference.vue'
+import CriterionTag from '@/components/CriterionTag.vue'
+
+// Evaluation value can be a plain string (legacy) or {reason, cited_rules} object
+function evalReason(v: unknown): string {
+  if (typeof v === 'object' && v !== null && 'reason' in v) return (v as any).reason ?? ''
+  return String(v ?? '')
+}
+function evalRules(v: unknown): string[] {
+  if (typeof v === 'object' && v !== null && 'cited_rules' in v) return (v as any).cited_rules ?? []
+  return []
+}
+function isCannotDetermine(v: unknown): boolean {
+  return evalReason(v).startsWith('[?]')
+}
+function cleanReason(v: unknown): string {
+  const r = evalReason(v)
+  return r.startsWith('[?]') ? r.slice(3).trim() : r
+}
+
+// Safe score parser — handles noUncheckedIndexedAccess (split returns string | undefined at [0])
+function parseScore(score: string | undefined | null): number {
+  return parseInt((score ?? '0/9').split('/')[0] ?? '0', 10)
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -58,7 +83,7 @@ const filteredRequirements = computed(() => {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(req =>
       req.req_id.toLowerCase().includes(query) ||
-      req.module.toLowerCase().includes(query) ||
+      (req.module ?? '').toLowerCase().includes(query) ||
       req.requirement.toLowerCase().includes(query)
     )
   }
@@ -66,7 +91,7 @@ const filteredRequirements = computed(() => {
   // Score filter
   if (selectedFilter.value !== 'all') {
     filtered = filtered.filter(req => {
-      const score = parseInt(req.score.split('/')[0])
+      const score = parseScore(req.score)
       if (selectedFilter.value === 'low') return score <= 3
       if (selectedFilter.value === 'medium') return score >= 4 && score <= 6
       if (selectedFilter.value === 'high') return score >= 7
@@ -88,34 +113,35 @@ const totalPages = computed(() =>
 )
 
 const hasRequirements = computed(() => requirements.value.length > 0)
+const hasModuleData = computed(() => requirements.value.some(r => r.module && r.module.trim() !== ''))
 
 // Statistics
 const stats = computed(() => {
   const total = requirements.value.length
-  const low = requirements.value.filter(r => parseInt(r.score.split('/')[0]) <= 3).length
+  const low = requirements.value.filter(r => parseScore(r.score) <= 3).length
   const medium = requirements.value.filter(r => {
-    const score = parseInt(r.score.split('/')[0])
+    const score = parseScore(r.score)
     return score >= 4 && score <= 6
   }).length
-  const high = requirements.value.filter(r => parseInt(r.score.split('/')[0]) >= 7).length
+  const high = requirements.value.filter(r => parseScore(r.score) >= 7).length
 
   const avgScore = requirements.value.reduce((sum, r) => {
-    return sum + parseInt(r.score.split('/')[0])
+    return sum + parseScore(r.score)
   }, 0) / (total || 1)
 
   return { total, low, medium, high, avgScore: avgScore.toFixed(1) }
 })
 
 // Score color
-const getScoreColor = (score: string) => {
-  const num = parseInt(score.split('/')[0])
+const getScoreColor = (score: string | undefined) => {
+  const num = parseScore(score)
   if (num <= 3) return 'text-red-500'
   if (num <= 6) return 'text-yellow-500'
   return 'text-green-500'
 }
 
-const getScoreBg = (score: string) => {
-  const num = parseInt(score.split('/')[0])
+const getScoreBg = (score: string | undefined) => {
+  const num = parseScore(score)
   if (num <= 3) return 'bg-red-500 bg-opacity-10'
   if (num <= 6) return 'bg-yellow-500 bg-opacity-10'
   return 'bg-green-500 bg-opacity-10'
@@ -293,6 +319,7 @@ const toggleRow = (reqId: string) => {
                 </div>
 
                 <!-- Navigation Buttons -->
+                <CriteriaReference />
                 <button
                   @click="handlePrevious"
                   class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"
@@ -322,7 +349,7 @@ const toggleRow = (reqId: string) => {
                 <tr class="border-b border-gray-700">
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 50px;"></th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 120px;">ReqID</th>
-                  <th class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
+                  <th v-if="hasModuleData" class="px-4 py-4 text-left text-sm font-semibold text-white" style="width: 200px;">Module</th>
                   <th class="px-4 py-4 text-left text-sm font-semibold text-white">Requirement</th>
                   <th class="px-4 py-4 text-center text-sm font-semibold text-white" style="width: 80px;">Score</th>
                 </tr>
@@ -353,7 +380,7 @@ const toggleRow = (reqId: string) => {
                       </svg>
                     </td>
                     <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.req_id">{{ req.req_id }}</td>
-                    <td class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
+                    <td v-if="hasModuleData" class="px-4 py-4 text-sm text-gray-900 truncate" :title="req.module">{{ req.module }}</td>
                     <td class="px-4 py-4 text-sm text-gray-900 whitespace-pre-wrap break-words">{{ req.requirement }}</td>
                     <td class="px-4 py-4">
                       <div class="flex justify-center">
@@ -372,38 +399,72 @@ const toggleRow = (reqId: string) => {
 
                   <!-- Expanded Row -->
                   <tr v-if="expandedRow === req.id" class="bg-gray-50">
-                    <td colspan="5" class="px-6 py-4">
+                    <td :colspan="hasModuleData ? 5 : 4" class="px-6 py-4">
                       <div class="space-y-4">
                         <!-- Passed Criteria -->
                         <div>
                           <h4 class="text-sm font-semibold text-gray-700 mb-3">
                             Passed Criteria ({{ req.characteristics.length }}):
                           </h4>
-                          <div class="grid grid-cols-2 gap-3">
+                          <div class="grid grid-cols-5 gap-3">
                             <div
                               v-for="char in req.characteristics"
                               :key="char"
                               class="bg-green-50 rounded-lg p-3 border border-green-200"
                             >
-                              <p class="text-sm text-green-700">{{ char }}</p>
+                              <div class="flex items-center gap-1.5 flex-wrap">
+                                <p class="text-sm font-medium text-green-700">{{ char }}</p>
+                                <CriterionTag :criterion="char" />
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <!-- Failed Criteria -->
-                        <div>
+                        <div v-if="Object.entries(req.evaluation).some(([, v]) => !isCannotDetermine(v))">
                           <h4 class="text-sm font-semibold text-gray-700 mb-3">
-                            Failed Criteria ({{ Object.keys(req.evaluation).length }}):
+                            Failed Criteria ({{ Object.entries(req.evaluation).filter(([, v]) => !isCannotDetermine(v)).length }}):
                           </h4>
                           <div class="grid grid-cols-2 gap-3">
-                            <div
-                              v-for="(reason, criterion) in req.evaluation"
-                              :key="criterion"
-                              class="bg-red-50 rounded-lg p-3 border border-red-200"
-                            >
-                              <p class="text-sm font-semibold text-red-700 mb-1">{{ criterion }}</p>
-                              <p class="text-sm text-gray-700">{{ reason }}</p>
-                            </div>
+                            <template v-for="(val, criterion) in req.evaluation" :key="criterion">
+                              <div
+                                v-if="!isCannotDetermine(val)"
+                                class="bg-red-50 rounded-lg p-3 border border-red-200"
+                              >
+                                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                  <p class="text-sm font-semibold text-red-700">{{ criterion }}</p>
+                                  <CriterionTag :criterion="(criterion as string)" />
+                                </div>
+                                <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>
+                                <div v-if="evalRules(val).length" class="flex flex-wrap gap-1">
+                                  <RuleIcon v-for="rule in evalRules(val)" :key="rule" :name="rule" />
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+
+                        <!-- Cannot Determine Criteria -->
+                        <div v-if="Object.entries(req.evaluation).some(([, v]) => isCannotDetermine(v))">
+                          <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                            Cannot Determine ({{ Object.entries(req.evaluation).filter(([, v]) => isCannotDetermine(v)).length }}):
+                          </h4>
+                          <div class="grid grid-cols-2 gap-3">
+                            <template v-for="(val, criterion) in req.evaluation" :key="criterion">
+                              <div
+                                v-if="isCannotDetermine(val)"
+                                class="bg-yellow-50 rounded-lg p-3 border border-yellow-200"
+                              >
+                                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                  <p class="text-sm font-semibold text-yellow-700">{{ criterion }}</p>
+                                  <CriterionTag :criterion="(criterion as string)" />
+                                </div>
+                                <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>
+                                <div v-if="evalRules(val).length" class="flex flex-wrap gap-1">
+                                  <RuleIcon v-for="rule in evalRules(val)" :key="rule" :name="rule" />
+                                </div>
+                              </div>
+                            </template>
                           </div>
                         </div>
                       </div>

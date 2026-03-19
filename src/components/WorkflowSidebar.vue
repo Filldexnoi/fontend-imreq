@@ -272,18 +272,7 @@ const isStepActive = (step: string) => {
       </button>
 
       <!-- Arrow -->
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="text-gray-600"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600">
         <line x1="12" y1="5" x2="12" y2="19"/>
         <polyline points="19 12 12 19 5 12"/>
       </svg>
@@ -301,9 +290,7 @@ const isStepActive = (step: string) => {
       >
         <div :class="[
           'w-12 h-12 rounded-lg flex items-center justify-center',
-          isStepActive('compare')
-            ? 'bg-blue-500'
-            : 'bg-gray-700'
+          isStepActive('compare') ? 'bg-blue-500' : canNavigateToCompare ? 'bg-gray-700' : 'bg-gray-700'
         ]">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -317,9 +304,10 @@ const isStepActive = (step: string) => {
             stroke-linejoin="round"
             :class="isStepActive('compare') ? 'text-white' : canNavigateToCompare ? 'text-white' : 'text-gray-400'"
           >
-            <path d="M18 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/>
-            <path d="M9 10h6"/>
-            <path d="M9 14h6"/>
+            <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+            <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+            <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+            <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
           </svg>
         </div>
         <span :class="[
@@ -329,22 +317,11 @@ const isStepActive = (step: string) => {
             : canNavigateToCompare
             ? 'text-gray-400'
             : 'text-gray-600'
-        ]">Compare<br/>version</span>
+        ]">Compare<br/>requirements</span>
       </button>
 
       <!-- Arrow -->
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="text-gray-600"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600">
         <line x1="12" y1="5" x2="12" y2="19"/>
         <polyline points="19 12 12 19 5 12"/>
       </svg>
