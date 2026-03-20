@@ -324,14 +324,14 @@ export const suggestionAPI = {
     summary: {
       total: number
       jaccard: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
-      doc2vec: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
+      tfidf: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
       interpretation_counts: Record<string, number>
     }
     pairs: Array<{
       req_id: string
       original_score: string
       jaccard: number
-      doc2vec_sim: number
+      tfidf_sim: number
       interpretation: string
     }>
   }> => {

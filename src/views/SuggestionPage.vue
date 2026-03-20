@@ -192,14 +192,14 @@ type SimilarityResult = {
   summary: {
     total: number
     jaccard: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
-    doc2vec: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
+    tfidf: { mean: number; median: number; min: number; max: number; min_req: string; max_req: string }
     interpretation_counts: Record<string, number>
   }
   pairs: Array<{
     req_id: string
     original_score: string
     jaccard: number
-    doc2vec_sim: number
+    tfidf_sim: number
     interpretation: string
     is_split?: boolean
   }>
@@ -247,7 +247,7 @@ const renderHistogram = (data: SimilarityResult) => {
   const el = histogramEl.value
   if (!el) return
   const jaccardVals = data.pairs.map(p => p.jaccard)
-  const doc2vecVals = data.pairs.map(p => p.doc2vec_sim)
+  const tfidfVals = data.pairs.map(p => p.tfidf_sim)
   const trace1: Partial<Plotly.PlotData> = {
     x: jaccardVals,
     name: 'Text Similarity',
@@ -258,7 +258,7 @@ const renderHistogram = (data: SimilarityResult) => {
     opacity: 0.7,
   }
   const trace2: Partial<Plotly.PlotData> = {
-    x: doc2vecVals,
+    x: tfidfVals,
     name: 'Meaning Similarity',
     type: 'histogram',
     autobinx: false,
@@ -499,9 +499,9 @@ const handleViewSimilarity = async () => {
                               <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500 w-28 flex-shrink-0">Meaning Similarity</span>
                                 <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                  <div class="h-2 rounded-full transition-all" :class="getSimilarityForReq(sug.req_id)!.doc2vec_sim < 0.6 ? 'bg-red-500' : getSimilarityForReq(sug.req_id)!.doc2vec_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.doc2vec_sim * 100).toFixed(1)}%` }"></div>
+                                  <div class="h-2 rounded-full transition-all" :class="getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.6 ? 'bg-red-500' : getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1)}%` }"></div>
                                 </div>
-                                <span class="text-xs font-mono w-12 text-right" :class="getSimilarityForReq(sug.req_id)!.doc2vec_sim < 0.6 ? 'text-red-600' : getSimilarityForReq(sug.req_id)!.doc2vec_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">{{ (getSimilarityForReq(sug.req_id)!.doc2vec_sim * 100).toFixed(1) }}%</span>
+                                <span class="text-xs font-mono w-12 text-right" :class="getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.6 ? 'text-red-600' : getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">{{ (getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1) }}%</span>
                               </div>
                             </div>
                           </div>
@@ -658,10 +658,10 @@ const handleViewSimilarity = async () => {
                 <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
                   <p class="text-xs font-bold text-purple-600 uppercase tracking-wide mb-2">Meaning Similarity</p>
                   <div class="grid grid-cols-2 gap-1.5 text-xs">
-                    <div class="flex justify-between"><span class="text-gray-500">Mean</span><span class="font-semibold text-gray-800">{{ similarityData.summary.doc2vec.mean }}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">Median</span><span class="font-semibold text-gray-800">{{ similarityData.summary.doc2vec.median }}</span></div>
-                    <div class="flex justify-between gap-1"><span class="text-gray-500">Min</span><span class="font-semibold text-red-600">{{ similarityData.summary.doc2vec.min }} <span class="text-gray-400">({{ similarityData.summary.doc2vec.min_req }})</span></span></div>
-                    <div class="flex justify-between gap-1"><span class="text-gray-500">Max</span><span class="font-semibold text-green-600">{{ similarityData.summary.doc2vec.max }} <span class="text-gray-400">({{ similarityData.summary.doc2vec.max_req }})</span></span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Mean</span><span class="font-semibold text-gray-800">{{ similarityData.summary.tfidf.mean }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Median</span><span class="font-semibold text-gray-800">{{ similarityData.summary.tfidf.median }}</span></div>
+                    <div class="flex justify-between gap-1"><span class="text-gray-500">Min</span><span class="font-semibold text-red-600">{{ similarityData.summary.tfidf.min }} <span class="text-gray-400">({{ similarityData.summary.tfidf.min_req }})</span></span></div>
+                    <div class="flex justify-between gap-1"><span class="text-gray-500">Max</span><span class="font-semibold text-green-600">{{ similarityData.summary.tfidf.max }} <span class="text-gray-400">({{ similarityData.summary.tfidf.max_req }})</span></span></div>
                   </div>
                 </div>
               </div>
@@ -732,12 +732,12 @@ const handleViewSimilarity = async () => {
                           <div class="flex-1 bg-gray-200 rounded-full h-2">
                             <div
                               class="h-2 rounded-full transition-all"
-                              :class="pair.doc2vec_sim < 0.6 ? 'bg-red-500' : pair.doc2vec_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'"
-                              :style="{ width: `${(pair.doc2vec_sim * 100).toFixed(1)}%` }"
+                              :class="pair.tfidf_sim < 0.6 ? 'bg-red-500' : pair.tfidf_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'"
+                              :style="{ width: `${(pair.tfidf_sim * 100).toFixed(1)}%` }"
                             ></div>
                           </div>
-                          <span class="text-xs font-mono w-10 text-right" :class="pair.doc2vec_sim < 0.6 ? 'text-red-600' : pair.doc2vec_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">
-                            {{ (pair.doc2vec_sim * 100).toFixed(1) }}%
+                          <span class="text-xs font-mono w-10 text-right" :class="pair.tfidf_sim < 0.6 ? 'text-red-600' : pair.tfidf_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">
+                            {{ (pair.tfidf_sim * 100).toFixed(1) }}%
                           </span>
                         </div>
                       </td>
