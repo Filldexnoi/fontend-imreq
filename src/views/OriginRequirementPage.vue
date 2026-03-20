@@ -92,7 +92,7 @@ const readFileColumns = async (file: File): Promise<string[]> => {
         const content = e.target?.result as string
         const lines = content.split('\n')
         if (lines.length > 0) {
-          const headers = lines[0]
+          const headers = (lines[0] ?? '')
             .split(',')
             .map(h => h.trim().replace(/["\r]/g, ''))
           resolve(headers)

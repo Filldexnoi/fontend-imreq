@@ -243,7 +243,7 @@ const writingTips = [
                 v-for="c in criteria"
                 :key="c.name"
                 class="border rounded-xl overflow-hidden"
-                :class="colorMap[c.color].split(' ')[2]"
+                :class="(colorMap[c.color] ?? '').split(' ')[2]"
               >
                 <div class="flex items-start gap-3 p-3" :class="colorMap[c.color]">
                   <div class="flex items-center gap-2 min-w-0">
@@ -283,7 +283,7 @@ const writingTips = [
                 v-for="p in earsPrterns"
                 :key="p.type"
                 class="border rounded-xl overflow-hidden"
-                :class="earsColorMap[p.color].split(' ')[1]"
+                :class="(earsColorMap[p.color] ?? '').split(' ')[1]"
               >
                 <div class="flex items-center gap-3 px-4 py-3" :class="earsColorMap[p.color]">
                   <span :class="['px-2.5 py-1 rounded-lg text-white text-xs font-bold font-mono flex-shrink-0', earsKeywordColor[p.color]]">{{ p.keyword }}</span>

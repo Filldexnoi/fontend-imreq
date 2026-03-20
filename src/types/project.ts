@@ -7,6 +7,8 @@ export interface Project {
   id: string
   title: string
   description: string
+  requirement_template?: string
+  reference_files?: any[]
   created_at: string
   updated_at?: string
 }
@@ -28,6 +30,8 @@ export interface OriginRequirement {
   created_at: string
   updated_at?: string
 }
+
+export type Requirement = OriginRequirement
 
 // ============================================
 // Analyzed Requirement Types

@@ -12,8 +12,9 @@ const selectedFile = ref<File | null>(null)
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
-    selectedFile.value = target.files[0]
-    emit('fileUploaded', target.files[0])
+    const file = target.files[0]!
+    selectedFile.value = file
+    emit('fileUploaded', file)
   }
   // Reset input so the same file can be re-selected
   target.value = ''
@@ -22,8 +23,9 @@ const handleFileSelect = (event: Event) => {
 const handleDrop = (event: DragEvent) => {
   isDragging.value = false
   if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-    selectedFile.value = event.dataTransfer.files[0]
-    emit('fileUploaded', event.dataTransfer.files[0])
+    const file = event.dataTransfer.files[0]!
+    selectedFile.value = file
+    emit('fileUploaded', file)
   }
 }
 

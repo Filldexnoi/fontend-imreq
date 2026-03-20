@@ -71,7 +71,7 @@ const filteredSuggestions = computed(() => {
       sug.req_id.toLowerCase().includes(query) ||
       sug.module.toLowerCase().includes(query) ||
       sug.original_requirement.toLowerCase().includes(query) ||
-      sug.suggested_requirement.toLowerCase().includes(query)
+      (sug.suggested_requirement ?? '').toLowerCase().includes(query)
     )
   }
 
@@ -178,7 +178,7 @@ const getScoreColor = (score: string | undefined) => {
   if (!score) return 'text-gray-500'
   const parts = score.split('/')
   if (parts.length === 0) return 'text-gray-500'
-  const num = parseInt(parts[0])
+  const num = parseInt(parts[0] ?? '0')
   if (isNaN(num)) return 'text-gray-500'
   if (num <= 3) return 'text-red-500'
   if (num <= 6) return 'text-yellow-500'
@@ -189,7 +189,7 @@ const getScoreBg = (score: string | undefined) => {
   if (!score) return 'bg-gray-500 bg-opacity-10'
   const parts = score.split('/')
   if (parts.length === 0) return 'bg-gray-500 bg-opacity-10'
-  const num = parseInt(parts[0])
+  const num = parseInt(parts[0] ?? '0')
   if (isNaN(num)) return 'bg-gray-500 bg-opacity-10'
   if (num <= 3) return 'bg-red-500 bg-opacity-10'
   if (num <= 6) return 'bg-yellow-500 bg-opacity-10'
