@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import WorkflowSidebar from '@/components/WorkflowSidebar.vue'
 import RuleIcon from '@/components/RuleIcon.vue'
-import CriteriaReference from '@/components/CriteriaReference.vue'
 import CriterionTag from '@/components/CriterionTag.vue'
 
 // Evaluation value can be a plain string (legacy) or {reason, cited_rules} object
@@ -319,7 +318,6 @@ const toggleRow = (reqId: string) => {
                 </div>
 
                 <!-- Navigation Buttons -->
-                <CriteriaReference />
                 <button
                   @click="handlePrevious"
                   class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-sm font-medium flex items-center gap-2"

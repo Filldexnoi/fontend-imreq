@@ -8,7 +8,6 @@ import { suggestionAPI, selectedRequirementAPI } from '@/services/api'
 import RuleIcon from '@/components/RuleIcon.vue'
 import Plotly from 'plotly.js-dist-min'
 import TextDiff from '@/components/TextDiff.vue'
-import CriteriaReference from '@/components/CriteriaReference.vue'
 import CriterionTag from '@/components/CriterionTag.vue'
 
 // Improvement value can be a plain string (legacy) or {description, cited_rules} object
@@ -405,7 +404,6 @@ const handleViewSimilarity = async () => {
                   <input v-model="searchQuery" type="text" placeholder="Search" class="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-2.5 text-gray-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 </div>
-                <CriteriaReference />
                 <button @click="handleViewSimilarity" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                   Similarity Summary

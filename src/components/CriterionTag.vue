@@ -11,16 +11,16 @@ interface Tag {
 }
 
 const CRITERION_TAGS: Record<string, Tag[]> = {
-  Appropriate: [{ label: '§5.2.5.1', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.1 — Appropriate: Requirement is suitable for its level of abstraction and avoids unnecessary design constraints.' }],
-  Complete:    [{ label: '§5.2.5.2', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.2 — Complete: Requirement is self-contained and understandable without external information.' }],
-  Conforming:  [{ label: '§5.2.5.3', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.3 — Conforming: Requirement follows an approved template and writing style (ISO 29148 or EARS).' },
-                { label: 'EARS',     color: 'green',  tooltip: 'EARS (Easy Approach to Requirements Syntax): Ubiquitous · Event-driven (WHEN) · State-driven (WHILE) · Unwanted behavior (IF…THEN) · Optional feature (WHERE).' }],
-  Correct:     [{ label: '§5.2.5.4', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.4 — Correct: Requirement accurately represents the stakeholder need. Validated against reference documents.' }],
-  Feasible:    [{ label: '§5.2.5.5', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.5 — Feasible: Requirement can be realized within project constraints (cost, schedule, technology).' }],
-  Necessary:   [{ label: '§5.2.5.6', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.6 — Necessary: Omitting this requirement would leave a real capability gap not covered by any other requirement.' }],
-  Singular:    [{ label: '§5.2.5.7', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.7 — Singular: States exactly one capability or constraint. Requirements joined by "and" covering distinct functions should be split.' }],
-  Unambiguous: [{ label: '§5.2.5.8', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.8 — Unambiguous: Only one valid interpretation. Avoids vague terms, unclear pronouns, and subjective adjectives.' }],
-  Verifiable:  [{ label: '§5.2.5.9', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.9 — Verifiable: Can be proven by inspection, analysis, test, or demonstration. Measurable criteria enhance verifiability.' }],
+  Appropriate: [{ label: 'Appropriate', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.1 — Appropriate: Requirement is suitable for its level of abstraction and avoids unnecessary design constraints.' }],
+  Complete:    [{ label: 'Complete',    color: 'blue',   tooltip: 'ISO 29148 §5.2.5.2 — Complete: Requirement is self-contained and understandable without external information.' }],
+  Conforming:  [{ label: 'Conforming',  color: 'blue',   tooltip: 'ISO 29148 §5.2.5.3 — Conforming: Requirement follows an approved template and writing style (ISO 29148 or EARS).' },
+                { label: 'EARS',        color: 'green',  tooltip: 'EARS (Easy Approach to Requirements Syntax): Ubiquitous · Event-driven (WHEN) · State-driven (WHILE) · Unwanted behavior (IF…THEN) · Optional feature (WHERE).' }],
+  Correct:     [{ label: 'Correct',     color: 'blue',   tooltip: 'ISO 29148 §5.2.5.4 — Correct: Requirement accurately represents the stakeholder need. Validated against reference documents.' }],
+  Feasible:    [{ label: 'Feasible',    color: 'blue',   tooltip: 'ISO 29148 §5.2.5.5 — Feasible: Requirement can be realized within project constraints (cost, schedule, technology).' }],
+  Necessary:   [{ label: 'Necessary',   color: 'blue',   tooltip: 'ISO 29148 §5.2.5.6 — Necessary: Omitting this requirement would leave a real capability gap not covered by any other requirement.' }],
+  Singular:    [{ label: 'Singular',    color: 'blue',   tooltip: 'ISO 29148 §5.2.5.7 — Singular: States exactly one capability or constraint. Requirements joined by "and" covering distinct functions should be split.' }],
+  Unambiguous: [{ label: 'Unambiguous', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.8 — Unambiguous: Only one valid interpretation. Avoids vague terms, unclear pronouns, and subjective adjectives.' }],
+  Verifiable:  [{ label: 'Verifiable',  color: 'blue',   tooltip: 'ISO 29148 §5.2.5.9 — Verifiable: Can be proven by inspection, analysis, test, or demonstration. Measurable criteria enhance verifiability.' }],
 }
 
 const colorClass: Record<string, string> = {
