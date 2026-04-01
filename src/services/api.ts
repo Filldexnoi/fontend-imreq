@@ -107,14 +107,13 @@ async function updateWithFile(url: string, formData: FormData) {
 export const authAPI = {
   // Login
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    // Backend expects JSON body with username and password
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        username: credentials.username,
+        identifier: credentials.identifier,
         password: credentials.password,
       }),
     })

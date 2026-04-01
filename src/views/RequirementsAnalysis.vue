@@ -411,7 +411,6 @@ const toggleRow = (reqId: string) => {
                               class="bg-green-50 rounded-lg p-3 border border-green-200"
                             >
                               <div class="flex items-center gap-1.5 flex-wrap">
-                                <p class="text-sm font-medium text-green-700">{{ char }}</p>
                                 <CriterionTag :criterion="char" />
                               </div>
                             </div>
@@ -430,7 +429,6 @@ const toggleRow = (reqId: string) => {
                                 class="bg-red-50 rounded-lg p-3 border border-red-200"
                               >
                                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                                  <p class="text-sm font-semibold text-red-700">{{ criterion }}</p>
                                   <CriterionTag :criterion="(criterion as string)" />
                                 </div>
                                 <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>
@@ -454,7 +452,6 @@ const toggleRow = (reqId: string) => {
                                 class="bg-yellow-50 rounded-lg p-3 border border-yellow-200"
                               >
                                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                                  <p class="text-sm font-semibold text-yellow-700">{{ criterion }}</p>
                                   <CriterionTag :criterion="(criterion as string)" />
                                 </div>
                                 <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>

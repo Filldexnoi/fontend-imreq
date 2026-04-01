@@ -31,13 +31,23 @@ const templates = [
   }
 ];
 
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx']
+
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files) {
+    const invalid = Array.from(target.files).filter(f => {
+      const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase()
+      return !ALLOWED_EXTENSIONS.includes(ext)
+    })
+    if (invalid.length > 0) {
+      errorMessage.value = `Unsupported file type: ${invalid.map(f => f.name).join(', ')}. Allowed: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX.`
+      target.value = ''
+      return
+    }
     const newFiles = Array.from(target.files);
     referenceFiles.value = [...referenceFiles.value, ...newFiles];
   }
-  // Reset input so same file can be selected again
   target.value = '';
 };
 

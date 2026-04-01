@@ -12,7 +12,7 @@ export interface User {
 }
 
 export interface LoginRequest {
-  username: string
+  identifier: string   // username or email
   password: string
 }
 

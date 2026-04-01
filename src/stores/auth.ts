@@ -78,9 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
       await authAPI.register(data)
 
       // Then auto-login with the same credentials
-      // Backend authenticate_user uses username field
       const loginSuccess = await login({
-        username: data.username,
+        identifier: data.username,
         password: data.password
       })
 

@@ -187,6 +187,31 @@ const getScoreBg = (score: string | undefined) => {
   return 'bg-green-500 bg-opacity-10'
 }
 
+// sim is 0–1 (multiply by 100 to get %)
+const getSimBarColor = (sim: number) => {
+  const pct = sim * 100
+  if (pct <= 50) return 'bg-red-500'
+  if (pct <= 70) return 'bg-orange-500'
+  if (pct <= 90) return 'bg-yellow-500'
+  return 'bg-green-500'
+}
+
+const getSimTextColor = (sim: number) => {
+  const pct = sim * 100
+  if (pct <= 50) return 'text-red-600'
+  if (pct <= 70) return 'text-orange-600'
+  if (pct <= 90) return 'text-yellow-600'
+  return 'text-green-600'
+}
+
+const getSimLabel = (sim: number) => {
+  const pct = sim * 100
+  if (pct <= 50) return 'Low similarity.'
+  if (pct <= 70) return 'Medium similarity.'
+  if (pct <= 90) return 'High similarity.'
+  return 'Almost identical.'
+}
+
 // Similarity Summary
 type SimilarityResult = {
   summary: {
@@ -210,20 +235,20 @@ const isSimilarityLoading = ref(false)
 const similarityData = ref<SimilarityResult | null>(null)
 const similarityError = ref<string | null>(null)
 
-const interpretationLabelMap: Record<string, string> = {
-  'เหมือนมาก': 'Highly Similar',
-  'ความหมายใกล้เคียง': 'Semantically Close',
-  'เปลี่ยนบางส่วน': 'Partially Changed',
-  'เปลี่ยนมาก': 'Significantly Changed',
-}
+const sortedSimilarityPairs = computed(() => {
+  if (!similarityData.value) return []
+  return [...similarityData.value.pairs].sort((a, b) =>
+    a.req_id.localeCompare(b.req_id, undefined, { numeric: true, sensitivity: 'base' })
+  )
+})
 
-const interpretationLabel = (label: string) => interpretationLabelMap[label] ?? label
+const interpretationLabel = (label: string) => label
 
 const interpretationColor = (label: string) => {
-  if (label === 'เหมือนมาก') return 'text-green-600 bg-green-50'
-  if (label === 'ความหมายใกล้เคียง') return 'text-blue-600 bg-blue-50'
-  if (label === 'เปลี่ยนบางส่วน') return 'text-yellow-600 bg-yellow-50'
-  return 'text-red-600 bg-red-50'
+  if (label === 'Almost identical') return 'text-green-600 bg-green-50'
+  if (label === 'High similarity')  return 'text-yellow-600 bg-yellow-50'
+  if (label === 'Medium similarity') return 'text-orange-600 bg-orange-50'
+  return 'text-red-600 bg-red-50'  // Low similarity
 }
 
 const navigateToReq = async (reqId: string) => {
@@ -492,16 +517,16 @@ const handleViewSimilarity = async () => {
                               <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500 w-28 flex-shrink-0">Text Similarity</span>
                                 <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                  <div class="h-2 rounded-full transition-all" :class="getSimilarityForReq(sug.req_id)!.jaccard < 0.5 ? 'bg-red-500' : getSimilarityForReq(sug.req_id)!.jaccard < 0.75 ? 'bg-yellow-500' : 'bg-green-500'" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.jaccard * 100).toFixed(1)}%` }"></div>
+                                  <div class="h-2 rounded-full transition-all" :class="getSimBarColor(getSimilarityForReq(sug.req_id)!.jaccard)" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.jaccard * 100).toFixed(1)}%` }"></div>
                                 </div>
-                                <span class="text-xs font-mono w-12 text-right" :class="getSimilarityForReq(sug.req_id)!.jaccard < 0.5 ? 'text-red-600' : getSimilarityForReq(sug.req_id)!.jaccard < 0.75 ? 'text-yellow-600' : 'text-green-600'">{{ (getSimilarityForReq(sug.req_id)!.jaccard * 100).toFixed(1) }}%</span>
+                                <span class="text-xs font-mono w-12 text-right" :class="getSimTextColor(getSimilarityForReq(sug.req_id)!.jaccard)" :title="getSimLabel(getSimilarityForReq(sug.req_id)!.jaccard)">{{ (getSimilarityForReq(sug.req_id)!.jaccard * 100).toFixed(1) }}%</span>
                               </div>
                               <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500 w-28 flex-shrink-0">Meaning Similarity</span>
                                 <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                  <div class="h-2 rounded-full transition-all" :class="getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.6 ? 'bg-red-500' : getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1)}%` }"></div>
+                                  <div class="h-2 rounded-full transition-all" :class="getSimBarColor(getSimilarityForReq(sug.req_id)!.tfidf_sim)" :style="{ width: `${(getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1)}%` }"></div>
                                 </div>
-                                <span class="text-xs font-mono w-12 text-right" :class="getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.6 ? 'text-red-600' : getSimilarityForReq(sug.req_id)!.tfidf_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">{{ (getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1) }}%</span>
+                                <span class="text-xs font-mono w-12 text-right" :class="getSimTextColor(getSimilarityForReq(sug.req_id)!.tfidf_sim)" :title="getSimLabel(getSimilarityForReq(sug.req_id)!.tfidf_sim)">{{ (getSimilarityForReq(sug.req_id)!.tfidf_sim * 100).toFixed(1) }}%</span>
                               </div>
                             </div>
                           </div>
@@ -513,7 +538,6 @@ const handleViewSimilarity = async () => {
                           <div class="grid grid-cols-2 gap-3">
                             <div v-for="(improvement, criterion) in sug.improvements" :key="criterion" class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                               <div class="flex items-center gap-2 flex-wrap mb-1">
-                                <p class="text-sm font-semibold text-blue-700">{{ criterion }}</p>
                                 <CriterionTag :criterion="(criterion as string)" />
                               </div>
                               <p class="text-sm text-gray-700 mb-2">{{ improvDesc(improvement) }}</p>
@@ -697,7 +721,7 @@ const handleViewSimilarity = async () => {
                   </thead>
                   <tbody>
                     <tr
-                      v-for="pair in similarityData.pairs"
+                      v-for="pair in sortedSimilarityPairs"
                       :key="pair.req_id"
                       class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
                       @click="navigateToReq(pair.req_id)"
@@ -718,11 +742,11 @@ const handleViewSimilarity = async () => {
                           <div class="flex-1 bg-gray-200 rounded-full h-2">
                             <div
                               class="h-2 rounded-full transition-all"
-                              :class="pair.jaccard < 0.5 ? 'bg-red-500' : pair.jaccard < 0.75 ? 'bg-yellow-500' : 'bg-green-500'"
+                              :class="getSimBarColor(pair.jaccard)"
                               :style="{ width: `${(pair.jaccard * 100).toFixed(1)}%` }"
                             ></div>
                           </div>
-                          <span class="text-xs font-mono w-10 text-right" :class="pair.jaccard < 0.5 ? 'text-red-600' : pair.jaccard < 0.75 ? 'text-yellow-600' : 'text-green-600'">
+                          <span class="text-xs font-mono w-10 text-right" :class="getSimTextColor(pair.jaccard)" :title="getSimLabel(pair.jaccard)">
                             {{ (pair.jaccard * 100).toFixed(1) }}%
                           </span>
                         </div>
@@ -732,11 +756,11 @@ const handleViewSimilarity = async () => {
                           <div class="flex-1 bg-gray-200 rounded-full h-2">
                             <div
                               class="h-2 rounded-full transition-all"
-                              :class="pair.tfidf_sim < 0.6 ? 'bg-red-500' : pair.tfidf_sim < 0.8 ? 'bg-yellow-500' : 'bg-green-500'"
+                              :class="getSimBarColor(pair.tfidf_sim)"
                               :style="{ width: `${(pair.tfidf_sim * 100).toFixed(1)}%` }"
                             ></div>
                           </div>
-                          <span class="text-xs font-mono w-10 text-right" :class="pair.tfidf_sim < 0.6 ? 'text-red-600' : pair.tfidf_sim < 0.8 ? 'text-yellow-600' : 'text-green-600'">
+                          <span class="text-xs font-mono w-10 text-right" :class="getSimTextColor(pair.tfidf_sim)" :title="getSimLabel(pair.tfidf_sim)">
                             {{ (pair.tfidf_sim * 100).toFixed(1) }}%
                           </span>
                         </div>

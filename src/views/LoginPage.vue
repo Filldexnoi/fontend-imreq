@@ -7,13 +7,13 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const username = ref('')
+const identifier = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const isSubmitting = ref(false)
 
 const handleSubmit = async () => {
-  if (!username.value || !password.value) {
+  if (!identifier.value || !password.value) {
     return
   }
 
@@ -21,7 +21,7 @@ const handleSubmit = async () => {
   authStore.clearError()
 
   const success = await authStore.login({
-    username: username.value,
+    identifier: identifier.value,
     password: password.value
   })
 
@@ -66,7 +66,7 @@ const goToRegister = () => {
               Username or Email
             </label>
             <input
-              v-model="username"
+              v-model="identifier"
               type="text"
               placeholder="Enter your username or email"
               class="w-full px-4 py-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -125,7 +125,7 @@ const goToRegister = () => {
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="isSubmitting || !username || !password"
+            :disabled="isSubmitting || !identifier || !password"
             class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition flex items-center justify-center gap-2"
           >
             <svg
