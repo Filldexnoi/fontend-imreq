@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import * as Diff from 'diff' // นำเข้า library jsdiff
+import { diffWords } from '@/utils/diff'
 
 interface Props {
   original: string
@@ -12,16 +12,24 @@ const props = withDefaults(defineProps<Props>(), {
   showDiff: true
 })
 
-// ข้อมูลที่จะแสดงผล
+function isThai(text: string): boolean {
+  return /[\u0e00-\u0e7f]/.test(text)
+}
+
+// Thai word segmenter (granularity: 'word') — ใช้กับ diffWords
+// English ใช้ diffWords ปกติ (regex-based tokenizer ของ jsdiff)
+const thaiSegmenter = new Intl.Segmenter('th', { granularity: 'word' })
+
 const diffParts = computed(() => {
   if (!props.showDiff) {
     return [{ value: props.suggested, added: false, removed: false }]
   }
 
-  // ใช้ diffWords เพื่อเปรียบเทียบระดับคำ
-  // ตัวนี้จะฉลาดพอที่จะรู้ว่าคำไหน "คงเดิม" คำไหน "เปลี่ยน" 
-  // โดยไม่พังเพราะเรื่องช่องว่าง
-  return Diff.diffWords(props.original, props.suggested)
+  if (isThai(props.original) || isThai(props.suggested)) {
+    return diffWords(props.original, props.suggested, { intlSegmenter: thaiSegmenter })
+  }
+
+  return diffWords(props.original, props.suggested)
 })
 </script>
 
