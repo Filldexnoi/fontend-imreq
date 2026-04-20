@@ -15,8 +15,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          'diff': ['diff'],
-          'plotly': ['plotly.js-dist-min'],
+'plotly': ['plotly.js-dist-min'],
         }
       }
     }
