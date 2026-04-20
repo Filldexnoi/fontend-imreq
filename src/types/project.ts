@@ -200,7 +200,7 @@ export interface SingleSuggestionResponse {
 // WebSocket Progress Types
 // ============================================
 export interface ProgressMessage {
-  type: 'start' | 'progress' | 'complete' | 'saved' | 'error'
+  type: 'start' | 'progress' | 'complete' | 'saved' | 'error' | 'heartbeat'
   completed?: number
   total?: number
   percentage?: number
