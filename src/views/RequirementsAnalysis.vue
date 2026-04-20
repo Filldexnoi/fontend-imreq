@@ -161,9 +161,9 @@ const startAnalysis = async () => {
   try {
     await store.analyzeProjectWithProgress(projectId.value)
     await store.fetchAnalyzedRequirements(projectId.value)
-  } catch (error) {
-    console.error('Analysis failed:', error)
-    alert('Analysis failed')
+  } catch (err) {
+    console.error('Analysis failed:', err)
+    store.error = err instanceof Error ? err.message : 'Analysis failed'
   } finally {
     isAnalyzing.value = false
   }
@@ -237,6 +237,15 @@ const toggleRow = (reqId: string) => {
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
+        <!-- Error Banner -->
+        <div
+          v-if="store.error"
+          class="flex items-center justify-between gap-3 bg-red-900/60 border border-red-700 text-red-200 text-sm px-4 py-3 mx-4 mt-3 rounded-lg flex-shrink-0"
+        >
+          <span>{{ store.error }}</span>
+          <button @click="store.error = null" class="text-red-400 hover:text-red-200 transition text-lg leading-none">&times;</button>
+        </div>
+
         <!-- Results State (show directly without empty state) -->
         <div v-if="hasRequirements" class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <!-- Stats Bar -->

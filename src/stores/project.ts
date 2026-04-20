@@ -275,35 +275,44 @@ export const useProjectStore = defineStore('project', () => {
   const analyzeProjectWithProgress = async (projectId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const ws = api.websocket.createAnalysisWebSocket(projectId)
-      
+      let settled = false
+
+      const settle = (fn: () => void) => {
+        if (settled) return
+        settled = true
+        fn()
+      }
+
       ws.onopen = () => {
         console.log('Analysis WebSocket connected')
       }
-      
+
       ws.onmessage = (event) => {
         const data: ProgressMessage = JSON.parse(event.data)
+        if (data.type === 'heartbeat') return
         analysisProgress.value = data
-        
+
         if (data.type === 'saved') {
           fetchAnalyzedRequirements(projectId).then(() => {
             updateProjectStage(projectId)
             ws.close()
-            resolve()
+            settle(resolve)
           })
         } else if (data.type === 'error') {
           error.value = data.message || 'Analysis failed'
           ws.close()
-          reject(new Error(data.message))
+          settle(() => reject(new Error(data.message)))
         }
       }
-      
-      ws.onerror = (event) => {
+
+      ws.onerror = () => {
         error.value = 'WebSocket connection error'
-        reject(new Error('WebSocket connection error'))
+        settle(() => reject(new Error('WebSocket connection error')))
       }
-      
+
       ws.onclose = () => {
         console.log('Analysis WebSocket closed')
+        settle(() => reject(new Error('Connection lost during analysis')))
       }
     })
   }
@@ -421,35 +430,44 @@ export const useProjectStore = defineStore('project', () => {
   const generateSuggestionsWithProgress = async (projectId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const ws = api.websocket.createSuggestionWebSocket(projectId)
-      
+      let settled = false
+
+      const settle = (fn: () => void) => {
+        if (settled) return
+        settled = true
+        fn()
+      }
+
       ws.onopen = () => {
         console.log('Suggestion WebSocket connected')
       }
-      
+
       ws.onmessage = (event) => {
         const data: ProgressMessage = JSON.parse(event.data)
+        if (data.type === 'heartbeat') return
         suggestionProgress.value = data
-        
+
         if (data.type === 'saved') {
           fetchSuggestions(projectId).then(() => {
             updateProjectStage(projectId)
             ws.close()
-            resolve()
+            settle(resolve)
           })
         } else if (data.type === 'error') {
           error.value = data.message || 'Suggestion generation failed'
           ws.close()
-          reject(new Error(data.message))
+          settle(() => reject(new Error(data.message)))
         }
       }
-      
-      ws.onerror = (event) => {
+
+      ws.onerror = () => {
         error.value = 'WebSocket connection error'
-        reject(new Error('WebSocket connection error'))
+        settle(() => reject(new Error('WebSocket connection error')))
       }
-      
+
       ws.onclose = () => {
         console.log('Suggestion WebSocket closed')
+        settle(() => reject(new Error('Connection lost during suggestion generation')))
       }
     })
   }
