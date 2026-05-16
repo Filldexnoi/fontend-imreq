@@ -9,6 +9,7 @@ export interface Project {
   description: string
   requirement_template?: string
   reference_files?: any[]
+  enabled_criteria?: string[] | null
   created_at: string
   updated_at?: string
 }

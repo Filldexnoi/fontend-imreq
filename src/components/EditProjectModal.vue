@@ -17,6 +17,8 @@ const emit = defineEmits<{
   updated: []
 }>();
 
+const ALL_CRITERIA = ['Appropriate', 'Complete', 'Conforming', 'Correct', 'Feasible', 'Necessary', 'Singular', 'Unambiguous', 'Verifiable']
+
 const projectName = ref('');
 const projectDescription = ref('');
 const selectedTemplate = ref('ISO29148');
@@ -25,13 +27,24 @@ const existingFiles = ref<any[]>([]);
 const errorMessage = ref('');
 const showTemplateInfo = ref(false);
 const isUpdating = ref(false);
+const enabledCriteria = ref<string[]>([...ALL_CRITERIA]);
+
+const toggleCriterion = (name: string) => {
+  const idx = enabledCriteria.value.indexOf(name)
+  if (idx === -1) enabledCriteria.value.push(name)
+  else enabledCriteria.value.splice(idx, 1)
+}
+const toggleAll = () => {
+  enabledCriteria.value = enabledCriteria.value.length === ALL_CRITERIA.length ? [] : [...ALL_CRITERIA]
+}
 
 // ✅ Track original values to detect changes
 const originalValues = ref({
   title: '',
   description: '',
   template: 'ISO29148',
-  filesCount: 0
+  filesCount: 0,
+  criteria: null as string[] | null,
 });
 
 const templates = [
@@ -61,12 +74,18 @@ onMounted(() => {
     }));
   }
 
+  // Load enabled criteria (null = all)
+  enabledCriteria.value = props.project.enabled_criteria?.length
+    ? [...props.project.enabled_criteria]
+    : [...ALL_CRITERIA]
+
   // ✅ Save original values
   originalValues.value = {
     title: props.project.title,
     description: props.project.description,
     template: props.project.requirement_template || 'ISO29148',
-    filesCount: props.project.reference_files?.length || 0
+    filesCount: props.project.reference_files?.length || 0,
+    criteria: props.project.enabled_criteria ?? null,
   }
 });
 
@@ -120,26 +139,34 @@ const handleSubmit = async () => {
     const templateChanged = selectedTemplate.value !== originalValues.value.template
     const hasNewFiles = referenceFiles.value.length > 0
     const filesRemoved = existingFiles.value.length !== originalValues.value.filesCount
+    const newCriteria = enabledCriteria.value.length === ALL_CRITERIA.length ? null : [...enabledCriteria.value]
+    const origCriteriaSorted = [...(originalValues.value.criteria ?? ALL_CRITERIA)].sort().join(',')
+    const newCriteriaSorted = [...(newCriteria ?? ALL_CRITERIA)].sort().join(',')
+    const criteriaChanged = origCriteriaSorted !== newCriteriaSorted
 
     // If nothing changed, just close
-    if (!titleChanged && !descriptionChanged && !templateChanged && !hasNewFiles && !filesRemoved) {
+    if (!titleChanged && !descriptionChanged && !templateChanged && !hasNewFiles && !filesRemoved && !criteriaChanged) {
       emit('close')
       return
     }
 
     // Create FormData only with changed fields
     const formData = new FormData();
-    
+
     if (titleChanged) {
       formData.append('title', projectName.value)
     }
-    
+
     if (descriptionChanged) {
       formData.append('description', projectDescription.value)
     }
-    
+
     if (templateChanged) {
       formData.append('requirement_template', selectedTemplate.value)
+    }
+
+    if (criteriaChanged) {
+      formData.append('enabled_criteria', JSON.stringify(newCriteria))
     }
 
     // Add new files if any
@@ -344,6 +371,32 @@ const handleClose = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Criteria Selection -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-white text-sm">ISO 29148 Criteria to Analyze</label>
+          <button @click="toggleAll" class="text-blue-400 text-xs hover:text-blue-300 transition">
+            {{ enabledCriteria.length === ALL_CRITERIA.length ? 'Deselect all' : 'Select all' }}
+          </button>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-3 grid grid-cols-3 gap-2">
+          <label
+            v-for="c in ALL_CRITERIA"
+            :key="c"
+            class="flex items-center gap-2 cursor-pointer select-none"
+          >
+            <input
+              type="checkbox"
+              :checked="enabledCriteria.includes(c)"
+              @change="toggleCriterion(c)"
+              class="w-4 h-4 accent-blue-500"
+            />
+            <span class="text-gray-200 text-sm">{{ c }}</span>
+          </label>
+        </div>
+        <p v-if="enabledCriteria.length === 0" class="text-red-400 text-xs mt-1">กรุณาเลือกอย่างน้อย 1 criterion</p>
       </div>
 
       <!-- Action Buttons -->

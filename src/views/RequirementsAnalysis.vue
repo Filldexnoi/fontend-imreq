@@ -114,6 +114,8 @@ const totalPages = computed(() =>
 const hasRequirements = computed(() => requirements.value.length > 0)
 const hasModuleData = computed(() => requirements.value.some(r => r.module && r.module.trim() !== ''))
 
+const ALL_CRITERIA = ['Appropriate', 'Complete', 'Conforming', 'Correct', 'Feasible', 'Necessary', 'Singular', 'Unambiguous', 'Verifiable']
+
 // Statistics
 const stats = computed(() => {
   const total = requirements.value.length
@@ -129,6 +131,26 @@ const stats = computed(() => {
   }, 0) / (total || 1)
 
   return { total, low, medium, high, avgScore: avgScore.toFixed(1) }
+})
+
+// Per-criterion failure rate (only criteria that appear in any requirement's evaluation)
+const criteriaStats = computed(() => {
+  const reqs = requirements.value
+  if (!reqs.length) return []
+
+  // Collect which criteria are active (appear in any req — pass or fail)
+  const activeCriteria = ALL_CRITERIA.filter(c =>
+    reqs.some(r =>
+      (r.characteristics ?? []).includes(c) ||
+      Object.keys(r.evaluation ?? {}).includes(c)
+    )
+  )
+
+  return activeCriteria.map(c => {
+    const failCount = reqs.filter(r => Object.keys(r.evaluation ?? {}).includes(c)).length
+    const pct = Math.round((failCount / reqs.length) * 100)
+    return { name: c, failCount, pct }
+  })
 })
 
 // Score color
@@ -270,6 +292,29 @@ const toggleRow = (reqId: string) => {
               <div class="text-center">
                 <p class="text-gray-400 text-xxl mb-1">Average Score</p>
                 <p class="text-blue-400 text-2xl font-bold">{{ stats.avgScore }}/9</p>
+              </div>
+            </div>
+
+            <!-- Criteria Failure Rate Row -->
+            <div v-if="criteriaStats.length" class="mt-4 pt-3 border-t border-gray-700">
+              <p class="text-gray-500 text-xs mb-2">Criteria failure rate</p>
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-x-6 gap-y-3">
+                <div v-for="c in criteriaStats" :key="c.name" class="flex flex-col gap-1">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-gray-400 text-xs font-medium truncate">{{ c.name }}</span>
+                    <span
+                      class="text-xs font-bold shrink-0"
+                      :class="c.pct >= 60 ? 'text-red-400' : c.pct >= 30 ? 'text-yellow-400' : 'text-green-400'"
+                    >{{ c.pct }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :class="c.pct >= 60 ? 'bg-red-500' : c.pct >= 30 ? 'bg-yellow-500' : 'bg-green-500'"
+                      :style="{ width: c.pct + '%' }"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

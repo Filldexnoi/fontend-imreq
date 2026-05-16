@@ -314,6 +314,31 @@ watch([showSimilarityModal, similarityData], async ([show, data]) => {
   }
 })
 
+const actionGuide = computed(() => {
+  if (!similarityData.value) return null
+  const counts = similarityData.value.summary.interpretation_counts
+  const total = similarityData.value.summary.total
+  const lowCount = counts['Low similarity'] || 0
+  const medCount = counts['Medium similarity'] || 0
+  const highCount = counts['High similarity'] || 0
+  const identicalCount = counts['Almost identical'] || 0
+  const lowPct = Math.round((lowCount / total) * 100)
+  const medPct = Math.round((medCount / total) * 100)
+
+  const reviewRequired = [...similarityData.value.pairs]
+    .filter(p => p.interpretation === 'Low similarity')
+    .sort((a, b) => a.jaccard - b.jaccard)
+
+  const reviewSuggested = [...similarityData.value.pairs]
+    .filter(p => p.interpretation === 'Medium similarity')
+    .sort((a, b) => a.jaccard - b.jaccard)
+
+  const risk: 'high' | 'medium' | 'low' =
+    lowPct > 30 ? 'high' : lowPct > 10 || medPct > 40 ? 'medium' : 'low'
+
+  return { lowCount, medCount, highCount, identicalCount, lowPct, medPct, reviewRequired, reviewSuggested, risk, total }
+})
+
 const fetchSimilarityData = async () => {
   if (similarityData.value) return
   isSimilarityLoading.value = true
@@ -671,6 +696,98 @@ const handleViewSimilarity = async () => {
 
           <!-- Results -->
           <div v-else-if="similarityData" class="space-y-6">
+
+            <!-- Action Guide -->
+            <div v-if="actionGuide" :class="[
+              'rounded-xl border p-4',
+              actionGuide.risk === 'high'   ? 'bg-red-50 border-red-200' :
+              actionGuide.risk === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                                              'bg-green-50 border-green-200'
+            ]">
+              <!-- Header -->
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">
+                  {{ actionGuide.risk === 'high' ? '🔴' : actionGuide.risk === 'medium' ? '🟡' : '🟢' }}
+                </span>
+                <h3 :class="[
+                  'text-sm font-bold',
+                  actionGuide.risk === 'high' ? 'text-red-700' : actionGuide.risk === 'medium' ? 'text-yellow-700' : 'text-green-700'
+                ]">
+                  <template v-if="actionGuide.risk === 'high'">
+                    ต้องตรวจสอบอย่างละเอียด — {{ actionGuide.lowCount }} requirement เปลี่ยนแปลงมาก ({{ actionGuide.lowPct }}%)
+                  </template>
+                  <template v-else-if="actionGuide.risk === 'medium'">
+                    ควรตรวจสอบบางส่วน — {{ actionGuide.lowCount + actionGuide.medCount }} requirement มีการเปลี่ยนแปลงที่น่าสนใจ
+                  </template>
+                  <template v-else>
+                    AI Suggestion ส่วนใหญ่ปลอดภัย — การเปลี่ยนแปลงเล็กน้อย ยอมรับได้
+                  </template>
+                </h3>
+              </div>
+
+              <!-- Quick guide legend -->
+              <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
+                <div class="flex items-start gap-1.5">
+                  <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                  <span class="text-gray-600"><strong class="text-red-600">Low (&lt;50%)</strong> — เปลี่ยนแปลงมาก ต้องอ่านเปรียบเทียบก่อนตัดสินใจ หรือใช้ Custom Edit</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-orange-400 flex-shrink-0"></span>
+                  <span class="text-gray-600"><strong class="text-orange-600">Medium (50–70%)</strong> — มีการปรับ ควรอ่านทบทวนก่อนใช้</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-yellow-400 flex-shrink-0"></span>
+                  <span class="text-gray-600"><strong class="text-yellow-600">High (70–90%)</strong> — เปลี่ยนเล็กน้อย โดยทั่วไปปลอดภัย</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                  <span class="text-gray-600"><strong class="text-green-600">Almost identical (&gt;90%)</strong> — แทบไม่เปลี่ยน ยอมรับ AI ได้เลย</span>
+                </div>
+              </div>
+
+              <!-- Focus lists -->
+              <div class="space-y-2">
+                <!-- Must review -->
+                <div v-if="actionGuide.reviewRequired.length > 0">
+                  <p class="text-xs font-semibold text-red-700 mb-1">
+                    ⚠️ ต้องตรวจสอบก่อน (Low similarity {{ actionGuide.reviewRequired.length }} รายการ — เรียงจากต่างมากที่สุด):
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button
+                      v-for="pair in actionGuide.reviewRequired"
+                      :key="pair.req_id"
+                      @click="navigateToReq(pair.req_id)"
+                      class="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs font-mono border border-red-300 transition"
+                      :title="`Text similarity: ${(pair.jaccard * 100).toFixed(0)}%`"
+                    >
+                      {{ pair.req_id }} <span class="opacity-60">({{ (pair.jaccard * 100).toFixed(0) }}%)</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- Should review -->
+                <div v-if="actionGuide.reviewSuggested.length > 0">
+                  <p class="text-xs font-semibold text-orange-700 mb-1">
+                    👀 ควรอ่านเพิ่มเติม (Medium similarity {{ actionGuide.reviewSuggested.length }} รายการ):
+                  </p>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button
+                      v-for="pair in actionGuide.reviewSuggested"
+                      :key="pair.req_id"
+                      @click="navigateToReq(pair.req_id)"
+                      class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded text-xs font-mono border border-orange-300 transition"
+                      :title="`Text similarity: ${(pair.jaccard * 100).toFixed(0)}%`"
+                    >
+                      {{ pair.req_id }} <span class="opacity-60">({{ (pair.jaccard * 100).toFixed(0) }}%)</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- All safe -->
+                <p v-if="actionGuide.reviewRequired.length === 0 && actionGuide.reviewSuggested.length === 0" class="text-xs text-green-700 font-medium">
+                  ✅ ทุก requirement มีความคล้ายคลึงสูง — สามารถยอมรับ AI Suggestion ได้ทั้งหมด
+                </p>
+              </div>
+            </div>
+
             <!-- Histogram + Summary Stats -->
             <div class="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
               <h3 class="text-sm font-semibold text-gray-700">Distribution — {{ similarityData.summary.total }} pairs</h3>

@@ -11,12 +11,24 @@ const emit = defineEmits<{
   close: []
 }>();
 
+const ALL_CRITERIA = ['Appropriate', 'Complete', 'Conforming', 'Correct', 'Feasible', 'Necessary', 'Singular', 'Unambiguous', 'Verifiable']
+
 const projectName = ref('');
 const projectDescription = ref('');
 const selectedTemplate = ref('ISO29148');
 const referenceFiles = ref<File[]>([]);
 const errorMessage = ref('');
 const showTemplateInfo = ref(false);
+const enabledCriteria = ref<string[]>([...ALL_CRITERIA]);
+
+const toggleCriterion = (name: string) => {
+  const idx = enabledCriteria.value.indexOf(name)
+  if (idx === -1) enabledCriteria.value.push(name)
+  else enabledCriteria.value.splice(idx, 1)
+}
+const toggleAll = () => {
+  enabledCriteria.value = enabledCriteria.value.length === ALL_CRITERIA.length ? [] : [...ALL_CRITERIA]
+}
 
 const templates = [
   {
@@ -69,11 +81,13 @@ const handleSubmit = async () => {
 
   try {
     errorMessage.value = '';
+    const criteria = enabledCriteria.value.length === ALL_CRITERIA.length ? null : enabledCriteria.value
     const projectId = await projectStore.createProject(
       projectName.value,
       projectDescription.value,
       selectedTemplate.value,
-      referenceFiles.value.length > 0 ? referenceFiles.value : undefined
+      referenceFiles.value.length > 0 ? referenceFiles.value : undefined,
+      criteria,
     );
 
     // Navigate to the new project
@@ -233,6 +247,32 @@ const handleClose = () => {
         </div>
       </div>
 
+      <!-- Criteria Selection -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-white text-sm">ISO 29148 Criteria to Analyze</label>
+          <button @click="toggleAll" class="text-blue-400 text-xs hover:text-blue-300 transition">
+            {{ enabledCriteria.length === ALL_CRITERIA.length ? 'Deselect all' : 'Select all' }}
+          </button>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-3 grid grid-cols-3 gap-2">
+          <label
+            v-for="c in ALL_CRITERIA"
+            :key="c"
+            class="flex items-center gap-2 cursor-pointer select-none"
+          >
+            <input
+              type="checkbox"
+              :checked="enabledCriteria.includes(c)"
+              @change="toggleCriterion(c)"
+              class="w-4 h-4 accent-blue-500"
+            />
+            <span class="text-gray-200 text-sm">{{ c }}</span>
+          </label>
+        </div>
+        <p v-if="enabledCriteria.length === 0" class="text-red-400 text-xs mt-1">กรุณาเลือกอย่างน้อย 1 criterion</p>
+      </div>
+
       <!-- Action Buttons -->
       <div class="flex justify-between mt-8">
         <button
@@ -243,10 +283,10 @@ const handleClose = () => {
         </button>
         <button
           @click="handleSubmit"
-          :disabled="!projectName || !projectDescription || projectStore.isLoading"
+          :disabled="!projectName || !projectDescription || enabledCriteria.length === 0 || projectStore.isLoading"
           :class="[
             'px-8 py-3 rounded-full transition',
-            projectName && projectDescription && !projectStore.isLoading
+            projectName && projectDescription && enabledCriteria.length > 0 && !projectStore.isLoading
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"

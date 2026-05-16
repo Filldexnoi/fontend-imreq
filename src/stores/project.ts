@@ -83,7 +83,8 @@ export const useProjectStore = defineStore('project', () => {
     title: string,
     description: string,
     requirement_template?: string,
-    files?: File[]
+    files?: File[],
+    enabled_criteria?: string[] | null,
   ) => {
     loadingState.value = 'loading'
     error.value = null
@@ -93,6 +94,7 @@ export const useProjectStore = defineStore('project', () => {
         title,
         description,
         requirement_template,
+        enabled_criteria,
         files
       })
       await fetchProjects()

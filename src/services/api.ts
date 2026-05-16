@@ -187,12 +187,17 @@ export const projectAPI = {
     title: string;
     description: string;
     requirement_template?: string;
+    enabled_criteria?: string[] | null;
     files?: File[];
   }): Promise<{ id: string }> => {
     const formData = new FormData()
     formData.append('title', project.title)
     formData.append('description', project.description)
     formData.append('requirement_template', project.requirement_template || 'ISO29148')
+
+    if (project.enabled_criteria != null) {
+      formData.append('enabled_criteria', JSON.stringify(project.enabled_criteria))
+    }
 
     if (project.files && project.files.length > 0) {
       project.files.forEach(file => {
