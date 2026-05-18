@@ -412,15 +412,6 @@ const handleViewSimilarity = async () => {
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col bg-gray-900 min-h-0 overflow-hidden">
-        <!-- Error Banner -->
-        <div
-          v-if="store.error"
-          class="flex items-center justify-between gap-3 bg-red-900/60 border border-red-700 text-red-200 text-sm px-4 py-3 mx-4 mt-3 rounded-lg flex-shrink-0"
-        >
-          <span>{{ store.error }}</span>
-          <button @click="store.error = null" class="text-red-400 hover:text-red-200 transition text-lg leading-none">&times;</button>
-        </div>
-
         <!-- Empty State -->
         <div v-if="!hasSuggestions" class="flex-1 flex items-center justify-center">
           <div class="text-center">
@@ -714,13 +705,13 @@ const handleViewSimilarity = async () => {
                   actionGuide.risk === 'high' ? 'text-red-700' : actionGuide.risk === 'medium' ? 'text-yellow-700' : 'text-green-700'
                 ]">
                   <template v-if="actionGuide.risk === 'high'">
-                    ต้องตรวจสอบอย่างละเอียด — {{ actionGuide.lowCount }} requirement เปลี่ยนแปลงมาก ({{ actionGuide.lowPct }}%)
+                    ต้องตรวจสอบอย่างละเอียด
                   </template>
                   <template v-else-if="actionGuide.risk === 'medium'">
-                    ควรตรวจสอบบางส่วน — {{ actionGuide.lowCount + actionGuide.medCount }} requirement มีการเปลี่ยนแปลงที่น่าสนใจ
+                    ควรตรวจสอบบางส่วน
                   </template>
                   <template v-else>
-                    AI Suggestion ส่วนใหญ่ปลอดภัย — การเปลี่ยนแปลงเล็กน้อย ยอมรับได้
+                    ทุก requirement มีความคล้ายคลึงสูง
                   </template>
                 </h3>
               </div>
@@ -729,19 +720,19 @@ const handleViewSimilarity = async () => {
               <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
                 <div class="flex items-start gap-1.5">
                   <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                  <span class="text-gray-600"><strong class="text-red-600">Low (&lt;50%)</strong> — เปลี่ยนแปลงมาก ต้องอ่านเปรียบเทียบก่อนตัดสินใจ หรือใช้ Custom Edit</span>
+                  <span class="text-gray-600"><strong class="text-red-600">Low (&lt;50%)</strong> — เปลี่ยนแปลงมาก</span>
                 </div>
                 <div class="flex items-start gap-1.5">
                   <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-orange-400 flex-shrink-0"></span>
-                  <span class="text-gray-600"><strong class="text-orange-600">Medium (50–70%)</strong> — มีการปรับ ควรอ่านทบทวนก่อนใช้</span>
+                  <span class="text-gray-600"><strong class="text-orange-600">Medium (50–70%)</strong> — มีการปรับ</span>
                 </div>
                 <div class="flex items-start gap-1.5">
                   <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-yellow-400 flex-shrink-0"></span>
-                  <span class="text-gray-600"><strong class="text-yellow-600">High (70–90%)</strong> — เปลี่ยนเล็กน้อย โดยทั่วไปปลอดภัย</span>
+                  <span class="text-gray-600"><strong class="text-yellow-600">High (70–90%)</strong> — เปลี่ยนเล็กน้อย</span>
                 </div>
                 <div class="flex items-start gap-1.5">
                   <span class="mt-0.5 w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                  <span class="text-gray-600"><strong class="text-green-600">Almost identical (&gt;90%)</strong> — แทบไม่เปลี่ยน ยอมรับ AI ได้เลย</span>
+                  <span class="text-gray-600"><strong class="text-green-600">Almost identical (&gt;90%)</strong> — แทบไม่เปลี่ยน</span>
                 </div>
               </div>
 
@@ -781,10 +772,6 @@ const handleViewSimilarity = async () => {
                     </button>
                   </div>
                 </div>
-                <!-- All safe -->
-                <p v-if="actionGuide.reviewRequired.length === 0 && actionGuide.reviewSuggested.length === 0" class="text-xs text-green-700 font-medium">
-                  ✅ ทุก requirement มีความคล้ายคลึงสูง — สามารถยอมรับ AI Suggestion ได้ทั้งหมด
-                </p>
               </div>
             </div>
 
