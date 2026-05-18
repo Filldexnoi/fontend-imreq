@@ -5,6 +5,7 @@ import { ref } from 'vue'
 interface Props {
   fileName: string
   columns: string[]
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()
@@ -129,21 +130,32 @@ const isValid = () => {
       <div class="flex justify-between">
         <button
           @click="handleClose"
-          class="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition"
+          :disabled="isLoading"
+          class="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           @click="handleConfirm"
-          :disabled="!isValid()"
+          :disabled="!isValid() || isLoading"
           :class="[
-            'px-8 py-3 rounded-full transition',
-            isValid()
+            'px-8 py-3 rounded-full transition flex items-center gap-2',
+            isValid() && !isLoading
               ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           ]"
         >
-          Confirm
+          <svg
+            v-if="isLoading"
+            class="animate-spin h-4 w-4 text-gray-300"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          {{ isLoading ? 'Uploading...' : 'Confirm' }}
         </button>
       </div>
     </div>

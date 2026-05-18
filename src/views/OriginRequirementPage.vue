@@ -16,6 +16,7 @@ const project = computed(() => store.currentProject)
 const requirements = computed(() => store.originRequirements)
 
 const showMappingModal = ref(false)
+const isUploading = ref(false)
 const uploadedFile = ref<File | null>(null)
 const fileColumns = ref<string[]>([])
 const searchQuery = ref('')
@@ -142,6 +143,7 @@ const handleFileUploaded = async (file: File) => {
 const handleMappingConfirm = async (mapping: any) => {
   if (!uploadedFile.value) return
 
+  isUploading.value = true
   try {
     // Convert mapping format to match API
     // Empty string means: reqId = auto-generate, module = no module
@@ -166,6 +168,8 @@ const handleMappingConfirm = async (mapping: any) => {
   } catch (error: any) {
     console.error('Upload failed:', error)
     alert('Upload failed: ' + error.message)
+  } finally {
+    isUploading.value = false
   }
 }
 
@@ -364,6 +368,7 @@ const canNavigateToExport = computed(() => hasSuggestions.value)
       v-if="showMappingModal"
       :file-name="uploadedFile?.name || ''"
       :columns="fileColumns"
+      :is-loading="isUploading"
       @confirm="handleMappingConfirm"
       @close="handleMappingClose"
     />
