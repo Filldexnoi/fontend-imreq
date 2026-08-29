@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const props = defineProps<{ criterion: string }>()
+const props = defineProps<{ criterion: string; template?: string }>()
 
 interface Tag {
   label: string
@@ -10,11 +10,12 @@ interface Tag {
   tooltip: string
 }
 
+const CONFORMING_BASE: Tag = { label: 'Conforming', color: 'blue', tooltip: 'ISO 29148 §5.2.5.3 — Conforming: Requirement follows an approved template and writing style (ISO 29148 or EARS).' }
+const CONFORMING_EARS: Tag = { label: 'EARS', color: 'green', tooltip: 'EARS (Easy Approach to Requirements Syntax): Ubiquitous · Event-driven (WHEN) · State-driven (WHILE) · Unwanted behavior (IF…THEN) · Optional feature (WHERE).' }
+
 const CRITERION_TAGS: Record<string, Tag[]> = {
   Appropriate: [{ label: 'Appropriate', color: 'blue',   tooltip: 'ISO 29148 §5.2.5.1 — Appropriate: Requirement is suitable for its level of abstraction and avoids unnecessary design constraints.' }],
   Complete:    [{ label: 'Complete',    color: 'blue',   tooltip: 'ISO 29148 §5.2.5.2 — Complete: Requirement is self-contained and understandable without external information.' }],
-  Conforming:  [{ label: 'Conforming',  color: 'blue',   tooltip: 'ISO 29148 §5.2.5.3 — Conforming: Requirement follows an approved template and writing style (ISO 29148 or EARS).' },
-                { label: 'EARS',        color: 'green',  tooltip: 'EARS (Easy Approach to Requirements Syntax): Ubiquitous · Event-driven (WHEN) · State-driven (WHILE) · Unwanted behavior (IF…THEN) · Optional feature (WHERE).' }],
   Correct:     [{ label: 'Correct',     color: 'blue',   tooltip: 'ISO 29148 §5.2.5.4 — Correct: Requirement accurately represents the stakeholder need. Validated against reference documents.' }],
   Feasible:    [{ label: 'Feasible',    color: 'blue',   tooltip: 'ISO 29148 §5.2.5.5 — Feasible: Requirement can be realized within project constraints (cost, schedule, technology).' }],
   Necessary:   [{ label: 'Necessary',   color: 'blue',   tooltip: 'ISO 29148 §5.2.5.6 — Necessary: Omitting this requirement would leave a real capability gap not covered by any other requirement.' }],
@@ -28,7 +29,14 @@ const colorClass: Record<string, string> = {
   green: 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200',
 }
 
-const tags = computed(() => CRITERION_TAGS[props.criterion] ?? [])
+const tags = computed(() => {
+  if (props.criterion === 'Conforming') {
+    return props.template === 'EARS'
+      ? [CONFORMING_BASE, CONFORMING_EARS]
+      : [CONFORMING_BASE]
+  }
+  return CRITERION_TAGS[props.criterion] ?? []
+})
 
 const activeTooltip = ref<string | null>(null)
 </script>

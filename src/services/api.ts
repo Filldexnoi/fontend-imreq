@@ -455,6 +455,40 @@ export const websocketAPI = {
 }
 
 // ============================================
+// Model Blind Test API (internal — not part of main product)
+// ============================================
+
+export const modelTestAPI = {
+  run: async (
+    file: File,
+    mapping: { req_id: string; module: string; requirement: string },
+    template: string = 'ISO29148'
+  ): Promise<{
+    model_a: { analysis: any; suggestions: any }
+    model_b: { analysis: any; suggestions: any }
+    total_requirements: number
+    requirements: Array<{ req_id: string; requirement: string; module: string }>
+  }> => {
+    const token = localStorage.getItem('auth_token')
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('mapping', JSON.stringify(mapping))
+    formData.append('template', template)
+
+    const response = await fetch(`${API_BASE_URL}/model-test/run`, {
+      method: 'POST',
+      body: formData,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: 'Request failed' }))
+      throw new Error(err.detail || 'Model test failed')
+    }
+    return response.json()
+  },
+}
+
+// ============================================
 // Export all APIs as default
 // ============================================
 
@@ -467,4 +501,5 @@ export default {
   selectedRequirement: selectedRequirementAPI,
   export: exportAPI,
   websocket: websocketAPI,
+  modelTest: modelTestAPI,
 }

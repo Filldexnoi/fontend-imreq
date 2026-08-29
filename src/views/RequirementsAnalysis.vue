@@ -456,7 +456,7 @@ const toggleRow = (reqId: string) => {
                               class="bg-green-50 rounded-lg p-3 border border-green-200"
                             >
                               <div class="flex items-center gap-1.5 flex-wrap">
-                                <CriterionTag :criterion="char" />
+                                <CriterionTag :criterion="char" :template="project?.requirement_template" />
                               </div>
                             </div>
                           </div>
@@ -474,7 +474,7 @@ const toggleRow = (reqId: string) => {
                                 class="bg-red-50 rounded-lg p-3 border border-red-200"
                               >
                                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                                  <CriterionTag :criterion="(criterion as string)" />
+                                  <CriterionTag :criterion="(criterion as string)" :template="project?.requirement_template" />
                                 </div>
                                 <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>
                                 <div v-if="evalRules(val).length" class="flex flex-wrap gap-1">
@@ -497,7 +497,7 @@ const toggleRow = (reqId: string) => {
                                 class="bg-yellow-50 rounded-lg p-3 border border-yellow-200"
                               >
                                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                                  <CriterionTag :criterion="(criterion as string)" />
+                                  <CriterionTag :criterion="(criterion as string)" :template="project?.requirement_template" />
                                 </div>
                                 <p class="text-sm text-gray-700 mb-2">{{ cleanReason(val) }}</p>
                                 <div v-if="evalRules(val).length" class="flex flex-wrap gap-1">

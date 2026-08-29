@@ -96,6 +96,17 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // Internal: Blind model comparison test (not part of main product)
+  {
+    path: '/model-test',
+    name: 'model-test',
+    component: () => import('@/views/ModelTestPage.vue'),
+    meta: {
+      title: 'Model Test — Internal',
+      requiresAuth: true
+    }
+  },
+
   // 404 Not Found
   {
     path: '/:pathMatch(.*)*',

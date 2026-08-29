@@ -563,7 +563,7 @@ const handleViewSimilarity = async () => {
                           <div class="grid grid-cols-2 gap-3">
                             <div v-for="(improvement, criterion) in sug.improvements" :key="criterion" class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                               <div class="flex items-center gap-2 flex-wrap mb-1">
-                                <CriterionTag :criterion="(criterion as string)" />
+                                <CriterionTag :criterion="(criterion as string)" :template="project?.requirement_template" />
                               </div>
                               <p class="text-sm text-gray-700 mb-2">{{ improvDesc(improvement) }}</p>
                               <div v-if="improvRules(improvement).length" class="flex flex-wrap gap-1">
