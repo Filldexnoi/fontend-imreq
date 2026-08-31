@@ -1,42 +1,126 @@
-# imreq
+# ImReq - Frontend Setup Guide
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + TypeScript + Vite frontend for the ImReq requirements-analysis app (ISO/IEC/IEEE 29148).
 
-## Recommended IDE Setup
+## 🚀 Quick Start
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+### Prerequisites
+- Node.js `^20.19.0` or `>=22.12.0` (see `engines` in `package.json`)
+- The [backend API](../backend-imreq/README.md) running (default: `http://localhost:8000`)
 
-## Recommended Browser Setup
+---
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## 📦 Installation Steps
 
-## Type Support for `.vue` Imports in TS
+### 1. Go to the frontend folder
+```bash
+cd imreq
+```
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+### 2. Install dependencies
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 3. Configure environment variables
+```bash
+# Windows (PowerShell):
+copy .env.example .env
+# macOS/Linux:
+cp .env.example .env
+```
 
-```sh
+Edit `.env`:
+```env
+VITE_API_URL=http://localhost:8000/api
+```
+
+If this is not set, the app falls back to `http://localhost:8000/api` (see `src/services/api.ts`). Point it to your deployed backend URL in production.
+
+### 4. Run the dev server
+```bash
 npm run dev
 ```
+Opens on http://localhost:5173 by default.
 
-### Type-Check, Compile and Minify for Production
-
-```sh
+### 5. Build for production
+```bash
 npm run build
 ```
+Runs type-checking (`vue-tsc`) then builds with Vite into `dist/`.
+
+### 6. Preview the production build locally
+```bash
+npm run preview
+```
+
+---
+
+## 📁 Project Structure
+```
+imreq/
+├── src/
+│   ├── main.ts
+│   ├── App.vue
+│   ├── router/          # Vue Router routes
+│   ├── stores/           # Pinia stores
+│   ├── services/          # API client (api.ts -> VITE_API_URL)
+│   ├── views/              # Page components
+│   ├── components/          # Reusable UI components
+│   ├── types/                # TypeScript types
+│   ├── constants/
+│   ├── libs/
+│   └── utils/
+├── public/
+├── index.html
+├── vite.config.ts          # '@' alias -> src/, manual chunking (vue, plotly)
+├── tailwind.config.js
+├── postcss.config.js
+└── vercel.json               # Vercel deployment config
+```
+
+---
+
+## 🛠️ Tech Stack
+- **Vue 3** (Composition API) + **TypeScript**
+- **Vite 7** for dev/build
+- **Vue Router** + **Pinia** for routing/state
+- **Tailwind CSS** for styling
+- **Plotly.js** for charts
+
+---
+
+## 🛠️ Troubleshooting
+
+### API requests fail / CORS errors
+- Make sure the backend is running and `VITE_API_URL` in `.env` points to it.
+- Make sure the backend's `CORS_ORIGINS` env var includes `http://localhost:5173`.
+
+### Type errors on build
+```bash
+npm run type-check
+```
+
+### Port already in use
+```bash
+npm run dev -- --port 5174
+```
+
+### Stale dependencies
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+---
+
+## Recommended IDE Setup
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (disable Vetur if installed).
+
+## Recommended Browser Setup
+- Chromium-based: [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+- Firefox: [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+
+---
+
+Deployment: configured for **Vercel** (`vercel.json`) — set `VITE_API_URL` as an environment variable in the Vercel project settings.
